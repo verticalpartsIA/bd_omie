@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { Mail, Lock, User, Building2, Target, BarChart3, Wrench, ArrowRight } from "lucide-react";
 import { AuthSwitcher, SplitShell, FormHead, Field } from "@/components/auth/index";
-import { useAuth } from "@/lib/auth-mock";
+import { useAuth, profileLanding, type Profile } from "@/lib/auth-mock";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/register")({
@@ -33,7 +33,7 @@ function RegisterPage() {
   const [empresa, setEmpresa] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
-  const [role, setRole] = useState("estrategico");
+  const [role, setRole] = useState<Profile>("estrategico");
   const [loading, setLoading] = useState(false);
 
   const score = useMemo(() => passwordScore(pw), [pw]);
@@ -43,13 +43,12 @@ function RegisterPage() {
     e.preventDefault();
     if (!matches) return;
     setLoading(true);
-    await register(nome, email, pw);
+    const u = await register(nome, email, pw, role);
     setLoading(false);
-    navigate({ to: "/dashboard" });
+    navigate({ to: profileLanding[u.profile] });
   }
 
   void empresa;
-  void role;
 
   const lvl = ["", "Fraca", "Razoável", "Boa", "Forte"][score];
   const lvlColor = ["text-neutral-500", "text-red-600", "text-orange-500", "text-[#C99E00]", "text-green-600"][score];
