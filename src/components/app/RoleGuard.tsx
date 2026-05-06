@@ -1,10 +1,14 @@
+import { useEffect, useState } from "react";
 import { useAuth, type Role } from "@/lib/auth-mock";
 import { ShieldAlert } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 export function RoleGuard({ allow, children }: { allow: Role[]; children: React.ReactNode }) {
   const { hasAnyRole, user } = useAuth();
-  if (!user) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  // While not mounted (SSR/initial) or while loading user from storage, render children optimistically
+  if (!mounted || !user) return <>{children}</>;
   if (!hasAnyRole(allow)) {
     return (
       <main className="flex flex-1 items-center justify-center p-10">
