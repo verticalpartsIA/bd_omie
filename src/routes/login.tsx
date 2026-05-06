@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Mail, Lock, ArrowRight } from "lucide-react";
-import { AuthSwitcher, SplitShell, FormHead, Field } from "@/components/auth";
+import { AuthSwitcher, SplitShell, FormHead, Field } from "@/components/auth/index";
 import { useAuth } from "@/lib/auth-mock";
 
 export const Route = createFileRoute("/login")({

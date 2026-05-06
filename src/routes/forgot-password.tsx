@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Mail, Send, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { AuthSwitcher, CenteredShell, FormHead, Field } from "@/components/auth";
+import { AuthSwitcher, CenteredShell, FormHead, Field } from "@/components/auth/index";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({ meta: [{ title: "Recuperar acesso — VerticalParts" }] }),
