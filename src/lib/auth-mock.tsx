@@ -58,7 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        setUser(JSON.parse(raw));
+        const parsed = JSON.parse(raw) as Partial<AuthUser>;
+        const profile: Profile = (parsed.profile as Profile) ?? "admin";
+        setUser({
+          id: parsed.id ?? crypto.randomUUID(),
+          nome: parsed.nome ?? "User",
+          email: parsed.email ?? "",
+          profile,
+          roles: profileToRoles[profile],
+          avatarUrl: parsed.avatarUrl,
+        });
       } catch {
         /* ignore */
       }
