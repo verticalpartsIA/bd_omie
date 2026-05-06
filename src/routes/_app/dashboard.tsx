@@ -26,11 +26,16 @@ import {
 } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
 import { KpiCard } from "@/components/app/KpiCard";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 
 export const Route = createFileRoute("/_app/dashboard" as never)({
   head: () => ({ meta: [{ title: "Strategic Dashboard — VerticalParts" }] }),
-  component: StrategicDashboard,
+  component: () => (
+    <RoleGuard allow={["admin", "gestor"]}>
+      <StrategicDashboard />
+    </RoleGuard>
+  ),
 });
 
 const revenueData = [

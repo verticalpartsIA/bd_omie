@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { AuthSwitcher, SplitShell, FormHead, Field } from "@/components/auth/index";
-import { useAuth } from "@/lib/auth-mock";
+import { useAuth, profileLanding } from "@/lib/auth-mock";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Entrar — VerticalParts" }] }),
@@ -19,9 +19,9 @@ function LoginPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await login(email, password);
+    const u = await login(email, password);
     setLoading(false);
-    navigate({ to: "/dashboard" });
+    navigate({ to: profileLanding[u.profile] });
   }
 
   return (
