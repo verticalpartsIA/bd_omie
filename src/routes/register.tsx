@@ -10,7 +10,7 @@ export const Route = createFileRoute("/register")({
   component: RegisterPage,
 });
 
-const roles = [
+const roles: { id: Profile; name: string; desc: string; Icon: typeof Target }[] = [
   { id: "estrategico", name: "Estratégico", desc: "Visão executiva", Icon: Target },
   { id: "analitico", name: "Analítico", desc: "Relatórios e KPIs", Icon: BarChart3 },
   { id: "operacional", name: "Operacional", desc: "Pedidos e estoque", Icon: Wrench },
