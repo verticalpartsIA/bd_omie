@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { Lock, Check, ArrowLeft, CheckCheck } from "lucide-react";
-import { AuthSwitcher, CenteredShell, FormHead, Field } from "@/components/auth";
+import { AuthSwitcher, CenteredShell, FormHead, Field } from "@/components/auth/index";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/reset-password")({

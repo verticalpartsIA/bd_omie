@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { Mail, Lock, User, Building2, Target, BarChart3, Wrench, ArrowRight } from "lucide-react";
-import { AuthSwitcher, SplitShell, FormHead, Field } from "@/components/auth";
+import { AuthSwitcher, SplitShell, FormHead, Field } from "@/components/auth/index";
 import { useAuth } from "@/lib/auth-mock";
 import { cn } from "@/lib/utils";
 
