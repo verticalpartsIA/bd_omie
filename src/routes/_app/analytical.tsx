@@ -9,7 +9,7 @@ import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 
-export const Route = createFileRoute("/_app/analytical" as never)({
+export const Route = createFileRoute("/_app/analytical")({
   head: () => ({ meta: [{ title: "Analytical Dashboard — VerticalParts" }] }),
   component: () => (
     <RoleGuard allow={["admin", "gestor", "financeiro"]}>

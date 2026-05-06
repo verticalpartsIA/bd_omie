@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-mock";
 const SidebarToggleContext = createContext<() => void>(() => {});
 export const useSidebarToggle = () => useContext(SidebarToggleContext);
 
-export const Route = createFileRoute("/_app" as never)({
+export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 

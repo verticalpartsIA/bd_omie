@@ -4,7 +4,7 @@ import { Topbar } from "@/components/app/Topbar";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 
-export const Route = createFileRoute("/_app/operational" as never)({
+export const Route = createFileRoute("/_app/operational")({
   head: () => ({ meta: [{ title: "Operational Dashboard — VerticalParts" }] }),
   component: () => (
     <RoleGuard allow={["admin", "vendedor", "estoque"]}>
