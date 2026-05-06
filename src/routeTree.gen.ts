@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppOperationalRouteImport } from './routes/_app/operational'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAnalyticalRouteImport } from './routes/_app/analytical'
 
@@ -47,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppOperationalRoute = AppOperationalRouteImport.update({
+  id: '/operational',
+  path: '/operational',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/analytical': typeof AppAnalyticalRoute
   '/dashboard': typeof AppDashboardRoute
+  '/operational': typeof AppOperationalRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/analytical': typeof AppAnalyticalRoute
   '/dashboard': typeof AppDashboardRoute
+  '/operational': typeof AppOperationalRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_app/analytical': typeof AppAnalyticalRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/operational': typeof AppOperationalRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/analytical'
     | '/dashboard'
+    | '/operational'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/analytical'
     | '/dashboard'
+    | '/operational'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_app/analytical'
     | '/_app/dashboard'
+    | '/_app/operational'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/operational': {
+      id: '/_app/operational'
+      path: '/operational'
+      fullPath: '/operational'
+      preLoaderRoute: typeof AppOperationalRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -191,11 +210,13 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAnalyticalRoute: typeof AppAnalyticalRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppOperationalRoute: typeof AppOperationalRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticalRoute: AppAnalyticalRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppOperationalRoute: AppOperationalRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
