@@ -15,11 +15,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppProdutosRouteImport } from './routes/_app/produtos'
 import { Route as AppOperationalRouteImport } from './routes/_app/operational'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAnalyticalRouteImport } from './routes/_app/analytical'
+import { Route as AppProdutosIndexRouteImport } from './routes/_app/produtos.index'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -50,11 +50,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppProdutosRoute = AppProdutosRouteImport.update({
-  id: '/produtos',
-  path: '/produtos',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppOperationalRoute = AppOperationalRouteImport.update({
   id: '/operational',
   path: '/operational',
@@ -75,6 +70,11 @@ const AppAnalyticalRoute = AppAnalyticalRouteImport.update({
   path: '/analytical',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProdutosIndexRoute = AppProdutosIndexRouteImport.update({
+  id: '/produtos/',
+  path: '/produtos/',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -86,7 +86,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
   '/operational': typeof AppOperationalRoute
-  '/produtos': typeof AppProdutosRoute
+  '/produtos/': typeof AppProdutosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -98,7 +98,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
   '/operational': typeof AppOperationalRoute
-  '/produtos': typeof AppProdutosRoute
+  '/produtos': typeof AppProdutosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -112,7 +112,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estoque': typeof AppEstoqueRoute
   '/_app/operational': typeof AppOperationalRoute
-  '/_app/produtos': typeof AppProdutosRoute
+  '/_app/produtos/': typeof AppProdutosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -126,7 +126,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/estoque'
     | '/operational'
-    | '/produtos'
+    | '/produtos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,7 +151,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/estoque'
     | '/_app/operational'
-    | '/_app/produtos'
+    | '/_app/produtos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -207,13 +207,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/produtos': {
-      id: '/_app/produtos'
-      path: '/produtos'
-      fullPath: '/produtos'
-      preLoaderRoute: typeof AppProdutosRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/operational': {
       id: '/_app/operational'
       path: '/operational'
@@ -242,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticalRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/produtos/': {
+      id: '/_app/produtos/'
+      path: '/produtos'
+      fullPath: '/produtos/'
+      preLoaderRoute: typeof AppProdutosIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -250,7 +250,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppOperationalRoute: typeof AppOperationalRoute
-  AppProdutosRoute: typeof AppProdutosRoute
+  AppProdutosIndexRoute: typeof AppProdutosIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -258,7 +258,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppOperationalRoute: AppOperationalRoute,
-  AppProdutosRoute: AppProdutosRoute,
+  AppProdutosIndexRoute: AppProdutosIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -274,3 +274,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
