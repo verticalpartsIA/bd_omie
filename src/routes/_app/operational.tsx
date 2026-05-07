@@ -56,8 +56,9 @@ const STOCKS = [
 ] as const;
 
 function useClock() {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -66,16 +67,10 @@ function useClock() {
 
 function OperationalTV() {
   const now = useClock();
-  const nextRefresh = useMemo(
-    () => new Date(Date.now() + REFRESH_MIN * 60 * 1000),
-    // re-roll every 15 min
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [Math.floor(Date.now() / (REFRESH_MIN * 60 * 1000))],
-  );
-
-  const clock = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const dateLbl = `${DIAS[now.getDay()]} · ${pad(now.getDate())} ${MESES[now.getMonth()]} ${now.getFullYear()}`;
-  const refreshLbl = `${pad(nextRefresh.getHours())}:${pad(nextRefresh.getMinutes())}`;
+  const clock = now ? `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}` : "--:--:--";
+  const dateLbl = now ? `${DIAS[now.getDay()]} · ${pad(now.getDate())} ${MESES[now.getMonth()]} ${now.getFullYear()}` : "";
+  const nextRefresh = now ? new Date(now.getTime() + REFRESH_MIN * 60 * 1000) : null;
+  const refreshLbl = nextRefresh ? `${pad(nextRefresh.getHours())}:${pad(nextRefresh.getMinutes())}` : "--:--";
 
   return (
     <div
