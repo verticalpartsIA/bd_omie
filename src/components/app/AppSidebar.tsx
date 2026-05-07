@@ -12,6 +12,10 @@ import {
   Settings,
   ChevronsLeft,
   MoreVertical,
+  ShoppingBag,
+  Tag,
+  Warehouse,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-mock";
 import { cn } from "@/lib/utils";
@@ -40,9 +44,17 @@ const groups: NavGroup[] = [
   {
     label: "Cadastros",
     items: [
-      { to: "/produtos", label: "Products", icon: Package, badge: "4k" },
       { to: "/clientes", label: "Customers", icon: Users },
       { to: "/vendedores", label: "Sellers", icon: Briefcase },
+    ],
+  },
+  {
+    label: "Produtos & Estoque",
+    items: [
+      { to: "/produtos", label: "Produtos", icon: ShoppingBag, badge: "4k" },
+      { to: "/categorias", label: "Categorias", icon: Tag },
+      { to: "/estoque", label: "Estoque", icon: Warehouse },
+      { to: "/movimentacoes", label: "Movimentações", icon: ArrowLeftRight },
     ],
   },
   {
