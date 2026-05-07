@@ -16,6 +16,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppOperationalRouteImport } from './routes/_app/operational'
+import { Route as AppMovimentacoesRouteImport } from './routes/_app/movimentacoes'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCategoriasRouteImport } from './routes/_app/categorias'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppOperationalRoute = AppOperationalRouteImport.update({
   id: '/operational',
   path: '/operational',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMovimentacoesRoute = AppMovimentacoesRouteImport.update({
+  id: '/movimentacoes',
+  path: '/movimentacoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEstoqueRoute = AppEstoqueRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/movimentacoes': typeof AppMovimentacoesRoute
   '/operational': typeof AppOperationalRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/produtos/': typeof AppProdutosIndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/movimentacoes': typeof AppMovimentacoesRoute
   '/operational': typeof AppOperationalRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/produtos': typeof AppProdutosIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_app/categorias': typeof AppCategoriasRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estoque': typeof AppEstoqueRoute
+  '/_app/movimentacoes': typeof AppMovimentacoesRoute
   '/_app/operational': typeof AppOperationalRoute
   '/_app/produtos/$id': typeof AppProdutosIdRoute
   '/_app/produtos/': typeof AppProdutosIndexRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/dashboard'
     | '/estoque'
+    | '/movimentacoes'
     | '/operational'
     | '/produtos/$id'
     | '/produtos/'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/dashboard'
     | '/estoque'
+    | '/movimentacoes'
     | '/operational'
     | '/produtos/$id'
     | '/produtos'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_app/categorias'
     | '/_app/dashboard'
     | '/_app/estoque'
+    | '/_app/movimentacoes'
     | '/_app/operational'
     | '/_app/produtos/$id'
     | '/_app/produtos/'
@@ -238,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOperationalRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/movimentacoes': {
+      id: '/_app/movimentacoes'
+      path: '/movimentacoes'
+      fullPath: '/movimentacoes'
+      preLoaderRoute: typeof AppMovimentacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/estoque': {
       id: '/_app/estoque'
       path: '/estoque'
@@ -288,6 +307,7 @@ interface AppRouteChildren {
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
+  AppMovimentacoesRoute: typeof AppMovimentacoesRoute
   AppOperationalRoute: typeof AppOperationalRoute
   AppProdutosIdRoute: typeof AppProdutosIdRoute
   AppProdutosIndexRoute: typeof AppProdutosIndexRoute
@@ -298,6 +318,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCategoriasRoute: AppCategoriasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstoqueRoute: AppEstoqueRoute,
+  AppMovimentacoesRoute: AppMovimentacoesRoute,
   AppOperationalRoute: AppOperationalRoute,
   AppProdutosIdRoute: AppProdutosIdRoute,
   AppProdutosIndexRoute: AppProdutosIndexRoute,
