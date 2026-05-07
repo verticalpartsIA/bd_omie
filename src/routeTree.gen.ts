@@ -20,6 +20,7 @@ import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAnalyticalRouteImport } from './routes/_app/analytical'
 import { Route as AppProdutosIndexRouteImport } from './routes/_app/produtos.index'
+import { Route as AppProdutosIdRouteImport } from './routes/_app/produtos.$id'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -75,6 +76,11 @@ const AppProdutosIndexRoute = AppProdutosIndexRouteImport.update({
   path: '/produtos/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProdutosIdRoute = AppProdutosIdRouteImport.update({
+  id: '/produtos/$id',
+  path: '/produtos/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
   '/operational': typeof AppOperationalRoute
+  '/produtos/$id': typeof AppProdutosIdRoute
   '/produtos/': typeof AppProdutosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
   '/operational': typeof AppOperationalRoute
+  '/produtos/$id': typeof AppProdutosIdRoute
   '/produtos': typeof AppProdutosIndexRoute
 }
 export interface FileRoutesById {
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estoque': typeof AppEstoqueRoute
   '/_app/operational': typeof AppOperationalRoute
+  '/_app/produtos/$id': typeof AppProdutosIdRoute
   '/_app/produtos/': typeof AppProdutosIndexRoute
 }
 export interface FileRouteTypes {
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/estoque'
     | '/operational'
+    | '/produtos/$id'
     | '/produtos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/estoque'
     | '/operational'
+    | '/produtos/$id'
     | '/produtos'
   id:
     | '__root__'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/estoque'
     | '/_app/operational'
+    | '/_app/produtos/$id'
     | '/_app/produtos/'
   fileRoutesById: FileRoutesById
 }
@@ -242,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProdutosIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/produtos/$id': {
+      id: '/_app/produtos/$id'
+      path: '/produtos/$id'
+      fullPath: '/produtos/$id'
+      preLoaderRoute: typeof AppProdutosIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -250,6 +269,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppOperationalRoute: typeof AppOperationalRoute
+  AppProdutosIdRoute: typeof AppProdutosIdRoute
   AppProdutosIndexRoute: typeof AppProdutosIndexRoute
 }
 
@@ -258,6 +278,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppOperationalRoute: AppOperationalRoute,
+  AppProdutosIdRoute: AppProdutosIdRoute,
   AppProdutosIndexRoute: AppProdutosIndexRoute,
 }
 
