@@ -16,6 +16,7 @@ import {
   Tag,
   Warehouse,
   ArrowLeftRight,
+  Target,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-mock";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ const groups: NavGroup[] = [
     label: "Cadastros",
     items: [
       { to: "/clientes", label: "Customers", icon: Users },
+      { to: "/segmentos", label: "Segmentação RFM", icon: Target },
       { to: "/vendedores", label: "Sellers", icon: Briefcase },
     ],
   },
