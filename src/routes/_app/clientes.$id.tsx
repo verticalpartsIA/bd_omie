@@ -7,6 +7,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import {
   formatBRL, getClienteById, historicoComprasCliente, pedidosCliente,
   rfmColor, rfmLabel, segmentosLabel,
+  type Cliente,
 } from "@/data/clientes-mock";
 
 export const Route = createFileRoute("/_app/clientes/$id")({
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_app/clientes/$id")({
 
 function ClienteDetail() {
   const toggle = useSidebarToggle();
-  const { cliente: c } = Route.useLoaderData();
+  const { cliente: c } = Route.useLoaderData() as { cliente: Cliente };
   const historico = historicoComprasCliente(c.id);
   const pedidos = pedidosCliente(c.id);
   const rfmSeg = c.rfm.segmento;
