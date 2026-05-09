@@ -20,17 +20,10 @@ export function RFMScatter({ data }: { data: Cliente[] }) {
         <Tooltip
           cursor={{ strokeDasharray: "3 3" }}
           formatter={(v: unknown, name: unknown) => [String(v), String(name)]}
-          labelFormatter={() => ""}
-          content={({ active, payload }) => {
-            if (!active || !payload || !payload.length) return null;
-            const p = payload[0].payload as { nome: string; seg: string; receita: number };
-            return (
-              <div className="rounded border border-border bg-card px-3 py-2 text-xs shadow-md">
-                <div className="font-bold">{p.nome}</div>
-                <div className="text-muted-foreground">Segmento RFM: {p.seg}</div>
-                <div className="text-muted-foreground">Receita: R$ {(p.receita / 1000).toFixed(0)}k</div>
-              </div>
-            );
+          labelFormatter={(_l: unknown, payload: unknown) => {
+            const arr = payload as Array<{ payload?: { nome?: string; seg?: string } }> | undefined;
+            const p = arr?.[0]?.payload;
+            return p?.nome ? `${p.nome} · ${p.seg}` : "";
           }}
         />
         <Scatter data={points}>
