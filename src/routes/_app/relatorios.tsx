@@ -55,7 +55,7 @@ function RelatoriosPage() {
     }
     return categorias.map((cat) => {
       const ps = produtos.filter((p) => p.categoria === cat);
-      const receita = ps.reduce((s, p) => s + (p.precoMedio ?? 0) * (p.giroMensal ?? 1), 0);
+      const receita = ps.reduce((s, p) => s + p.custoUnitario * p.giro * 30, 0);
       return { chave: cat, receita, margem: Math.round(receita * 0.36), quantidade: ps.length, ticket: Math.round(receita / Math.max(1, ps.length)) };
     });
   }, [dimensao]);
@@ -63,11 +63,10 @@ function RelatoriosPage() {
   const sorted = [...customRows].sort((a, b) => (b as any)[metrica] - (a as any)[metrica]);
 
   // ABC dinâmica
-  const abcData = produtos.slice(0, 30).map((p) => ({
-    sku: p.sku,
-    receita: (p.precoMedio ?? 0) * (p.giroMensal ?? 1),
-    margem: Math.round((p.precoMedio ?? 0) * (p.giroMensal ?? 1) * (0.2 + Math.random() * 0.4)),
-  })).sort((a, b) => b.receita - a.receita);
+  const abcData = produtos.slice(0, 30).map((p) => {
+    const receita = p.custoUnitario * p.giro * 30;
+    return { sku: p.sku, receita, margem: Math.round(receita * 0.32) };
+  }).sort((a, b) => b.receita - a.receita);
 
   const onExport = () => toast.success("Relatório exportado para CSV");
 
@@ -168,10 +167,10 @@ function RelatoriosPage() {
                       <tr key={p.id} className="border-t border-border">
                         <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
                         <td className="px-3 py-2 text-muted-foreground">{p.categoria}</td>
-                        <td className="px-3 py-2 text-right font-mono">{p.estoque}</td>
-                        <td className="px-3 py-2 text-right font-mono">{p.giroMensal}</td>
-                        <td className="px-3 py-2 text-right font-mono">{p.cobertura}d</td>
-                        <td className="px-3 py-2 text-right font-mono">{formatBRL((p.precoMedio ?? 0) * p.estoque)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{p.estoqueAtual}</td>
+                        <td className="px-3 py-2 text-right font-mono">{p.giro}</td>
+                        <td className="px-3 py-2 text-right font-mono">{p.diasCobertura}d</td>
+                        <td className="px-3 py-2 text-right font-mono">{formatBRL(p.custoUnitario * p.estoqueAtual)}</td>
                       </tr>
                     ))}
                   </tbody>
