@@ -20,6 +20,7 @@ import { Route as AppSegmentosRouteImport } from './routes/_app/segmentos'
 import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppOperationalRouteImport } from './routes/_app/operational'
 import { Route as AppMovimentacoesRouteImport } from './routes/_app/movimentacoes'
+import { Route as AppFinanceiroRouteImport } from './routes/_app/financeiro'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCategoriasRouteImport } from './routes/_app/categorias'
@@ -83,6 +84,11 @@ const AppMovimentacoesRoute = AppMovimentacoesRouteImport.update({
   path: '/movimentacoes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEstoqueRoute = AppEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/financeiro': typeof AppFinanceiroRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
   '/operational': typeof AppOperationalRoute
   '/pedidos': typeof AppPedidosRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/financeiro': typeof AppFinanceiroRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
   '/operational': typeof AppOperationalRoute
   '/pedidos': typeof AppPedidosRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/_app/categorias': typeof AppCategoriasRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estoque': typeof AppEstoqueRoute
+  '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/movimentacoes': typeof AppMovimentacoesRoute
   '/_app/operational': typeof AppOperationalRoute
   '/_app/pedidos': typeof AppPedidosRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/dashboard'
     | '/estoque'
+    | '/financeiro'
     | '/movimentacoes'
     | '/operational'
     | '/pedidos'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/dashboard'
     | '/estoque'
+    | '/financeiro'
     | '/movimentacoes'
     | '/operational'
     | '/pedidos'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/_app/categorias'
     | '/_app/dashboard'
     | '/_app/estoque'
+    | '/_app/financeiro'
     | '/_app/movimentacoes'
     | '/_app/operational'
     | '/_app/pedidos'
@@ -338,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMovimentacoesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/financeiro': {
+      id: '/_app/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/estoque': {
       id: '/_app/estoque'
       path: '/estoque'
@@ -402,6 +421,7 @@ interface AppRouteChildren {
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
+  AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppMovimentacoesRoute: typeof AppMovimentacoesRoute
   AppOperationalRoute: typeof AppOperationalRoute
   AppPedidosRoute: typeof AppPedidosRoute
@@ -418,6 +438,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCategoriasRoute: AppCategoriasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstoqueRoute: AppEstoqueRoute,
+  AppFinanceiroRoute: AppFinanceiroRoute,
   AppMovimentacoesRoute: AppMovimentacoesRoute,
   AppOperationalRoute: AppOperationalRoute,
   AppPedidosRoute: AppPedidosRoute,
