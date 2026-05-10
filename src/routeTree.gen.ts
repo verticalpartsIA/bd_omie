@@ -15,9 +15,13 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppVendedoresRouteImport } from './routes/_app/vendedores'
 import { Route as AppSegmentosRouteImport } from './routes/_app/segmentos'
+import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
+import { Route as AppPedidosRouteImport } from './routes/_app/pedidos'
 import { Route as AppOperationalRouteImport } from './routes/_app/operational'
 import { Route as AppMovimentacoesRouteImport } from './routes/_app/movimentacoes'
+import { Route as AppFinanceiroRouteImport } from './routes/_app/financeiro'
 import { Route as AppEstoqueRouteImport } from './routes/_app/estoque'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCategoriasRouteImport } from './routes/_app/categorias'
@@ -56,9 +60,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppVendedoresRoute = AppVendedoresRouteImport.update({
+  id: '/vendedores',
+  path: '/vendedores',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSegmentosRoute = AppSegmentosRouteImport.update({
   id: '/segmentos',
   path: '/segmentos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPedidosRoute = AppPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationalRoute = AppOperationalRouteImport.update({
@@ -69,6 +88,11 @@ const AppOperationalRoute = AppOperationalRouteImport.update({
 const AppMovimentacoesRoute = AppMovimentacoesRouteImport.update({
   id: '/movimentacoes',
   path: '/movimentacoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEstoqueRoute = AppEstoqueRouteImport.update({
@@ -122,9 +146,13 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/financeiro': typeof AppFinanceiroRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
   '/operational': typeof AppOperationalRoute
+  '/pedidos': typeof AppPedidosRoute
+  '/relatorios': typeof AppRelatoriosRoute
   '/segmentos': typeof AppSegmentosRoute
+  '/vendedores': typeof AppVendedoresRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/clientes/': typeof AppClientesIndexRoute
@@ -140,9 +168,13 @@ export interface FileRoutesByTo {
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
   '/estoque': typeof AppEstoqueRoute
+  '/financeiro': typeof AppFinanceiroRoute
   '/movimentacoes': typeof AppMovimentacoesRoute
   '/operational': typeof AppOperationalRoute
+  '/pedidos': typeof AppPedidosRoute
+  '/relatorios': typeof AppRelatoriosRoute
   '/segmentos': typeof AppSegmentosRoute
+  '/vendedores': typeof AppVendedoresRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/clientes': typeof AppClientesIndexRoute
@@ -160,9 +192,13 @@ export interface FileRoutesById {
   '/_app/categorias': typeof AppCategoriasRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estoque': typeof AppEstoqueRoute
+  '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/movimentacoes': typeof AppMovimentacoesRoute
   '/_app/operational': typeof AppOperationalRoute
+  '/_app/pedidos': typeof AppPedidosRoute
+  '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/segmentos': typeof AppSegmentosRoute
+  '/_app/vendedores': typeof AppVendedoresRoute
   '/_app/clientes/$id': typeof AppClientesIdRoute
   '/_app/produtos/$id': typeof AppProdutosIdRoute
   '/_app/clientes/': typeof AppClientesIndexRoute
@@ -180,9 +216,13 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/dashboard'
     | '/estoque'
+    | '/financeiro'
     | '/movimentacoes'
     | '/operational'
+    | '/pedidos'
+    | '/relatorios'
     | '/segmentos'
+    | '/vendedores'
     | '/clientes/$id'
     | '/produtos/$id'
     | '/clientes/'
@@ -198,9 +238,13 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/dashboard'
     | '/estoque'
+    | '/financeiro'
     | '/movimentacoes'
     | '/operational'
+    | '/pedidos'
+    | '/relatorios'
     | '/segmentos'
+    | '/vendedores'
     | '/clientes/$id'
     | '/produtos/$id'
     | '/clientes'
@@ -217,9 +261,13 @@ export interface FileRouteTypes {
     | '/_app/categorias'
     | '/_app/dashboard'
     | '/_app/estoque'
+    | '/_app/financeiro'
     | '/_app/movimentacoes'
     | '/_app/operational'
+    | '/_app/pedidos'
+    | '/_app/relatorios'
     | '/_app/segmentos'
+    | '/_app/vendedores'
     | '/_app/clientes/$id'
     | '/_app/produtos/$id'
     | '/_app/clientes/'
@@ -279,11 +327,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/vendedores': {
+      id: '/_app/vendedores'
+      path: '/vendedores'
+      fullPath: '/vendedores'
+      preLoaderRoute: typeof AppVendedoresRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/segmentos': {
       id: '/_app/segmentos'
       path: '/segmentos'
       fullPath: '/segmentos'
       preLoaderRoute: typeof AppSegmentosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/relatorios': {
+      id: '/_app/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof AppRelatoriosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pedidos': {
+      id: '/_app/pedidos'
+      path: '/pedidos'
+      fullPath: '/pedidos'
+      preLoaderRoute: typeof AppPedidosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/operational': {
@@ -298,6 +367,13 @@ declare module '@tanstack/react-router' {
       path: '/movimentacoes'
       fullPath: '/movimentacoes'
       preLoaderRoute: typeof AppMovimentacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/financeiro': {
+      id: '/_app/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/estoque': {
@@ -364,9 +440,13 @@ interface AppRouteChildren {
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
+  AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppMovimentacoesRoute: typeof AppMovimentacoesRoute
   AppOperationalRoute: typeof AppOperationalRoute
+  AppPedidosRoute: typeof AppPedidosRoute
+  AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppSegmentosRoute: typeof AppSegmentosRoute
+  AppVendedoresRoute: typeof AppVendedoresRoute
   AppClientesIdRoute: typeof AppClientesIdRoute
   AppProdutosIdRoute: typeof AppProdutosIdRoute
   AppClientesIndexRoute: typeof AppClientesIndexRoute
@@ -378,9 +458,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppCategoriasRoute: AppCategoriasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstoqueRoute: AppEstoqueRoute,
+  AppFinanceiroRoute: AppFinanceiroRoute,
   AppMovimentacoesRoute: AppMovimentacoesRoute,
   AppOperationalRoute: AppOperationalRoute,
+  AppPedidosRoute: AppPedidosRoute,
+  AppRelatoriosRoute: AppRelatoriosRoute,
   AppSegmentosRoute: AppSegmentosRoute,
+  AppVendedoresRoute: AppVendedoresRoute,
   AppClientesIdRoute: AppClientesIdRoute,
   AppProdutosIdRoute: AppProdutosIdRoute,
   AppClientesIndexRoute: AppClientesIndexRoute,
