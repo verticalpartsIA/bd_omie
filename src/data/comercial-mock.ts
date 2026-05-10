@@ -83,13 +83,14 @@ export const conversaoEtapas = funil.slice(0, -1).map((f, i) => {
   };
 });
 
-export const cacPorCanal: Array<{ canal: CanalAquisicao; clientes: number; investimento: number; cac: number }> = [
-  { canal: "ativa", clientes: 32, investimento: 28_000, cac: 0 },
-  { canal: "whatsapp", clientes: 41, investimento: 12_500, cac: 0 },
-  { canal: "indicacao", clientes: 28, investimento: 4_200, cac: 0 },
-  { canal: "site", clientes: 19, investimento: 22_000, cac: 0 },
-  { canal: "evento", clientes: 9, investimento: 18_000, cac: 0 },
-].map((c) => ({ ...c, cac: Math.round(c.investimento / Math.max(1, c.clientes)) }));
+const cacBase: Array<{ canal: CanalAquisicao; clientes: number; investimento: number }> = [
+  { canal: "ativa", clientes: 32, investimento: 28_000 },
+  { canal: "whatsapp", clientes: 41, investimento: 12_500 },
+  { canal: "indicacao", clientes: 28, investimento: 4_200 },
+  { canal: "site", clientes: 19, investimento: 22_000 },
+  { canal: "evento", clientes: 9, investimento: 18_000 },
+];
+export const cacPorCanal = cacBase.map((c) => ({ ...c, cac: Math.round(c.investimento / Math.max(1, c.clientes)) }));
 
 export const comissaoMensal = [
   { mes: "Dez/24", comissao: 28_400 },
