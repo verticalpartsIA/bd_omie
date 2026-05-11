@@ -1,89 +1,58 @@
-# Plano: VerticalParts mockado
+# Plano de Evolução — VerticalParts v2.1
 
-Construir todo o site com UI funcional usando **dados mockados** (arrays/JSON em memória). Sem Supabase por enquanto. Depois eu te entrego os arquivos `.sql` (schema + RLS + seed) para você colar no SQL Editor do projeto `kgecbycsyrtdhmdziuul`.
+Escopo grande (14 telas). Vou executar em **4 ondas** seguindo a prioridade do SDD, com checkpoints entre elas para você validar antes de seguir. Tudo mantém identidade visual (preto/branco/amarelo), sidebar, títulos e KPIs atuais — apenas adiciono camadas de decisão.
 
-## Identidade visual (aplicada globalmente)
-- Logo "VerticalParts": **VERTICAL** cinza `#808080`, **PARTS** amarelo `#F5C400`, ícone engrenagem + elevador
-- Paleta tokens em `src/styles.css` (oklch):
-  - primary amarelo `#F5C400`, background preto `#000`, surface branco, neutro cinza `#808080`
-- Sidebar dark, cards brancos, acentos amarelos, dark-mode no Dashboard TV
-- Tipografia sans-serif bold (Inter / Manrope)
+## Fundação compartilhada (antes da Onda 1)
 
-## Arquitetura de rotas (TanStack Start, file-based)
+Componentes/utilitários reutilizáveis para evitar retrabalho:
 
-```
-src/routes/
-├── __root.tsx                  # shell + providers + auth context mock
-├── index.tsx                   # Landing (hero, produtos destaque, depoimentos, CTA)
-│
-├── login.tsx                   # Auth mock (qualquer credencial entra)
-├── register.tsx
-├── forgot-password.tsx
-│
-├── _app.tsx                    # Layout autenticado (sidebar + topbar)
-├── _app/dashboard.tsx          # KPIs, gráficos
-├── _app/dashboard-tv.tsx       # Dashboard operacional dark/TV
-│
-├── _app/produtos.tsx           # Lista
-├── _app/produtos.$id.tsx       # Detalhe
-├── _app/categorias.tsx
-├── _app/estoque.tsx
-├── _app/movimentacoes.tsx
-│
-├── _app/clientes.tsx
-├── _app/clientes.$id.tsx
-├── _app/segmentos.tsx
-│
-├── _app/vendedores.tsx
-├── _app/comissoes.tsx
-├── _app/metas.tsx
-│
-├── _app/pedidos.tsx
-├── _app/pedidos.$id.tsx
-├── _app/faturas.tsx
-├── _app/entregas.tsx
-│
-├── _app/financeiro.contas-pagar.tsx
-├── _app/financeiro.contas-receber.tsx
-├── _app/financeiro.fluxo-caixa.tsx
-│
-├── _app/relatorios.vendas.tsx
-├── _app/relatorios.rentabilidade.tsx
-├── _app/relatorios.estoque.tsx
-├── _app/relatorios.curva-abc.tsx
-├── _app/relatorios.financeiro.tsx
-├── _app/relatorios.custom.tsx
-│
-└── _app/perfil.tsx             # + sub-rotas security, notifications, preferences
-```
+- `GlobalFilters` — barra de filtros padronizada (período, categoria, cliente, vendedor, status, segmento, canal, região, unidade) por tela, via search params (TanStack zodValidator).
+- `ExportMenu` — botão CSV/Excel/PDF (CSV/Excel via blob no client; PDF via `window.print` estilizado).
+- `AlertasRecomendacoes` — bloco padrão "Alertas e Recomendações" recebendo lista tipada (crítico/atenção/info + ação sugerida).
+- `KpiCard` extensão: variante com delta vs meta + drilldown onClick.
+- `mock-engine`: helpers para EBITDA, churn, OTIF, aging, forecast, cohort — derivados dos mocks existentes (sem quebrar dados atuais).
 
-## Camada de dados mock
-- `src/mocks/` com arrays tipados: `produtos.ts`, `clientes.ts`, `pedidos.ts`, `vendedores.ts`, `financeiro.ts`, etc.
-- `src/lib/auth-mock.ts`: contexto de auth fake com roles (`admin`, `gestor`, `vendedor`, `financeiro`, `estoque`, `tv`)
-- Hooks `useProdutos()`, `usePedidos()`... retornando promises resolvidas com mocks (fácil trocar por Supabase depois)
+## Onda 1 — Diretoria (Prioridade 1)
 
-## Componentes compartilhados
-- `Sidebar` (dark, ícones lucide, agrupada por módulo + RBAC visual)
-- `Topbar` (busca, notificações, avatar)
-- `KpiCard`, `DataTable` (com filtro/paginação), `StatusBadge`, `Logo`
-- Gráficos com `recharts` (linhas, barras, pizza, curva ABC)
+1. **Strategic Dashboard**: cards EBITDA, Resultado Líquido, Receita Recorrente/Não Recorrente, Caixa 30/60/90; bloco "Atenção do CEO hoje" (agrega sinais de churn, ruptura, SLA, margem, vendedor); gráfico Receita×Margem×EBITDA 12m; Concentração Top 5/10; filtros globais; drilldown nos KPIs.
+2. **Finance**: cards EBITDA, Margem EBITDA, Resultado Líquido, Margem Líquida, Capital de Giro; simulação 3 cenários (conservador/provável/agressivo); alertas (caixa mínimo, inadimplência, margem negativa); DRE filtrável; Receita recorrente×não recorrente; ranking clientes mais/menos rentáveis.
+3. **Operational Dashboard**: corrigir sobreposição de cards; modo TV fullscreen; alternância de visões (Geral/Comercial/Estoque/Financeiro/Logística); ticker superior de alertas; níveis Crítico/Atenção/Info; bloco "Próxima ação"; auto-refresh 30s/1min/5min/manual; layout 16:9.
+4. **Orders**: cards OTIF e Pedidos Críticos; colunas Prioridade, Motivo do atraso, Transportadora; gráfico SLA por etapa; rankings de clientes com mais atrasos e motivos; alertas (>48h, VIP atrasado, faturado sem coleta, fatura vencida); drilldown do pedido.
 
-## Entregáveis desta fase
-1. Design system + Logo + tokens
-2. Landing pública + Auth mock
-3. Layout autenticado (sidebar/topbar)
-4. Todos os módulos com tabelas, formulários e gráficos populados com mock
-5. Dashboard TV (rota fullscreen dark)
-6. Perfil e preferências
+## Onda 2 — Receita e Cliente (Prioridade 2)
 
-## Próxima fase (após aprovação visual)
-Te entrego em `/mnt/documents/`:
-- `01_schema.sql` — tabelas + enums + índices
-- `02_rls.sql` — políticas + função `has_role`
-- `03_seed.sql` — dados iniciais (mesmos dos mocks)
-- `04_integration.md` — passo a passo para conectar o frontend ao seu projeto Supabase trocando os hooks mock pelo client real
+5. **Analytical Dashboard**: filtro de comparação (mês/tri/ano vs anterior); card Forecast; seção Oportunidades; cohort de clientes; margem por vendedor; drilldown Top Clientes/Produtos.
+6. **Customers**: cards Churn Rate e Risco Alto; colunas margem/LTV/risco/upsell/último contato; tela detalhe `/clientes/:id` enriquecida (histórico, produtos, margem, inadimplência, SLA, recomendações); bloco "Clientes que exigem ação hoje".
+7. **Segmentação RFM**: coluna Ação Recomendada; botão Criar Campanha; playbooks por segmento; métrica Receita Recuperável Estimada; filtro por vendedor responsável.
+8. **Sellers**: cards Margem média e Desconto médio; tabela com lucro estimado, CAC, conversão; ranking alternável (receita/margem/conversão/ticket/comissão); pipeline por etapa×vendedor; bloco "Vendedores que precisam de atenção".
 
-## Observação técnica
-Como é muito conteúdo, vou construir em **iterações**: começo pela base (tokens, logo, landing, auth, layout, sidebar, dashboard) e depois adiciono os módulos em blocos. Após cada bloco você revisa e seguimos.
+## Onda 3 — Estoque e Operação (Prioridade 3)
 
-Confirma que posso começar pela **Iteração 1: base + landing + auth + layout autenticado + dashboard principal**?
+9. **Estoque**: seção Aging (0-30/31-90/91-180/181-365/365+); cards Capital Parado e Compra Sugerida; tabela Recomendação de Reposição com impacto no caixa; alerta Ruptura Prevista.
+10. **Produtos**: colunas custo/preço/margem/giro/lead time/fornecedor/min/max/previsão de ruptura; botão "Novo Produto" funcional; detalhe enriquecido com substitutos e recomendação de compra; destaques visuais.
+11. **Categorias**: gráfico Giro×Margem (quadrante); rankings; status saudável/atenção/crítico; bloco "Categoria que exige ação"; clique no card filtra Produtos/Estoque.
+12. **Movimentações**: filtros expandidos; colunas responsável/cliente/pedido/OS/NF/lote; alertas anomalia; exportar auditoria; card Ajustes Manuais.
+
+## Onda 4 — Administração (Prioridade 4)
+
+13. **Reports**: Report Builder real (dimensão×métrica×agrupamento); salvar/agendar; export Excel/PDF; relatórios prontos catalogados; respeito a permissões.
+14. **Settings** (nova tela completa): 9 seções (Perfil, Empresa, Usuários/Permissões com 8 perfis, Integrações com slots Omie/Supabase/WhatsApp/Power BI/Sheets/API, Alertas configuráveis, Metas, Parâmetros estoque/financeiro, Auditoria com log).
+
+## Detalhes técnicos
+
+- **Stack**: TanStack Start + Router (file-based em `src/routes/_app/`), Recharts, shadcn/ui, Tailwind tokens em `src/styles.css`.
+- **Filtros globais**: `validateSearch` com `zodValidator` + `fallback`; URL como state para deep-linking; `retainSearchParams` para não perder filtros entre telas.
+- **Export**: CSV nativo (Blob+`URL.createObjectURL`), Excel via `xlsx` (instalar), PDF via `window.print` com `@media print` ou `jspdf`+`html2canvas` se necessário.
+- **Permissões**: reaproveitar `RoleGuard` + `auth-mock`; adicionar perfis novos no enum.
+- **Backend-ready**: cada tela consome dados via funções puras em `src/data/*-mock.ts` com assinatura compatível com futura migração para `createServerFn` (ex.: `getStrategicKpis(filters)`); nenhum mock será removido, apenas envelopado.
+- **Sem quebras**: KPIs e gráficos atuais permanecem; novidades são acrescentadas em blocos superiores ou seções novas.
+
+## Entregáveis por onda
+
+Ao final de cada onda eu paro, listo arquivos alterados/criados e peço seu OK antes de iniciar a próxima. Isso evita que mudanças grandes acumulem sem revisão.
+
+## Confirmação que preciso
+
+1. Posso começar pela **Onda 1 (Diretoria)** agora?
+2. Para PDF de exportação, prefere `window.print` (zero dependência, suficiente) ou biblioteca dedicada (`jspdf`)?
+3. "Backend real" entra como Onda 5 separada (ativar Lovable Cloud, migrar mocks para tabelas, RLS, auditoria real) — confirma esse adiamento?
