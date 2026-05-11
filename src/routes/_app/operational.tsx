@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   AlertOctagon,
@@ -14,6 +14,9 @@ import {
   TrendingDown,
   TrendingUp,
   UserX,
+  Maximize2,
+  Minimize2,
+  Sparkles,
 } from "lucide-react";
 import { RoleGuard } from "@/components/app/RoleGuard";
 
@@ -29,7 +32,13 @@ export const Route = createFileRoute("/_app/operational")({
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const pad = (n: number) => String(n).padStart(2, "0");
-const REFRESH_MIN = 15;
+type ViewMode = "geral" | "comercial" | "estoque" | "financeiro" | "logistica";
+const REFRESH_OPTIONS: Array<{ label: string; ms: number }> = [
+  { label: "30s", ms: 30_000 },
+  { label: "1min", ms: 60_000 },
+  { label: "5min", ms: 300_000 },
+  { label: "Manual", ms: 0 },
+];
 
 const ALERTS = [
   { tag: "crit", Icon: AlertOctagon, title: "MARGEM NEGATIVA", text: "Cabo Aço 6mm IWRC · −R$ 8,40 / un · 142 unidades vendidas" },
@@ -67,15 +76,44 @@ function useClock() {
 
 function OperationalTV() {
   const now = useClock();
+  const [view, setView] = useState<ViewMode>("geral");
+  const [refreshIdx, setRefreshIdx] = useState(2);
+  const [tick, setTick] = useState(0);
+  const [fs, setFs] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ms = REFRESH_OPTIONS[refreshIdx].ms;
+    if (!ms) return;
+    const id = setInterval(() => setTick((t) => t + 1), ms);
+    return () => clearInterval(id);
+  }, [refreshIdx]);
+
+  const toggleFullscreen = async () => {
+    if (typeof document === "undefined") return;
+    if (!document.fullscreenElement) {
+      await rootRef.current?.requestFullscreen?.();
+      setFs(true);
+    } else {
+      await document.exitFullscreen?.();
+      setFs(false);
+    }
+  };
+
+  const viewLabel: Record<ViewMode, string> = {
+    geral: "Geral", comercial: "Comercial", estoque: "Estoque", financeiro: "Financeiro", logistica: "Logística",
+  };
+
   const clock = now ? `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}` : "--:--:--";
   const dateLbl = now ? `${DIAS[now.getDay()]} · ${pad(now.getDate())} ${MESES[now.getMonth()]} ${now.getFullYear()}` : "";
-  const nextRefresh = now ? new Date(now.getTime() + REFRESH_MIN * 60 * 1000) : null;
-  const refreshLbl = nextRefresh ? `${pad(nextRefresh.getHours())}:${pad(nextRefresh.getMinutes())}` : "--:--";
+  const refreshLbl = REFRESH_OPTIONS[refreshIdx].label;
 
   return (
     <div
+      ref={rootRef}
       className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black font-poppins text-white"
       style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}
+      data-tick={tick}
     >
       {/* TOPBAR */}
       <header className="grid h-20 shrink-0 grid-cols-3 items-center border-b border-[#1E1E1E] bg-[#050505] px-8">
@@ -88,7 +126,7 @@ function OperationalTV() {
               Operational
             </span>
             <span className="text-sm font-bold tracking-wide text-[#C9C9C9]">
-              Sala de Controle · TV
+              Sala de Controle · TV · {viewLabel[view]}
             </span>
           </div>
         </div>
@@ -98,17 +136,47 @@ function OperationalTV() {
             {dateLbl}
           </div>
         </div>
-        <div className="flex items-center justify-end gap-4">
-          <div className="inline-flex items-center gap-2 rounded border border-[#2A2A2A] bg-[#1E1E1E] px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#C9C9C9]">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#F5C400]" style={{ animationDuration: "6s" }} />
-            Auto-refresh em <span className="font-mono text-[#F5C400]">{refreshLbl}</span>
-          </div>
+        <div className="flex items-center justify-end gap-2">
+          <select
+            value={refreshIdx}
+            onChange={(e) => setRefreshIdx(Number(e.target.value))}
+            className="rounded border border-[#2A2A2A] bg-[#1E1E1E] px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9C9C9] outline-none"
+          >
+            {REFRESH_OPTIONS.map((o, i) => <option key={o.label} value={i}>Refresh: {o.label}</option>)}
+          </select>
+          <span className="inline-flex items-center gap-1.5 rounded border border-[#2A2A2A] bg-[#1E1E1E] px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9C9C9]">
+            <RefreshCw className="h-3 w-3 text-[#F5C400]" />{refreshLbl}
+          </span>
+          <button
+            onClick={toggleFullscreen}
+            className="inline-flex items-center gap-1.5 rounded border border-[#2A2A2A] bg-[#1E1E1E] px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9C9C9] hover:border-[#F5C400]"
+          >
+            {fs ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+            {fs ? "Sair" : "TV"}
+          </button>
           <div className="inline-flex items-center gap-2 rounded border border-[#FF6B6B] bg-[#FF3B3B] px-4 py-2 text-[13px] font-extrabold uppercase tracking-[0.18em] text-white animate-pulse">
             <span className="h-2.5 w-2.5 rounded-full bg-white" />
             LIVE
           </div>
         </div>
       </header>
+
+      {/* VIEW SWITCHER */}
+      <div className="flex shrink-0 items-center gap-1 border-b border-[#1E1E1E] bg-[#0A0A0A] px-6 py-2">
+        {(Object.keys(viewLabel) as ViewMode[]).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`rounded px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] transition-colors ${
+              view === v ? "bg-[#F5C400] text-black" : "text-[#808080] hover:bg-[#1E1E1E] hover:text-[#C9C9C9]"
+            }`}
+          >{viewLabel[v]}</button>
+        ))}
+        <div className="ml-auto flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#A0A0A0]">
+          <Sparkles className="h-3 w-3 text-[#F5C400]" />
+          Próxima ação: <span className="text-[#F5C400]">aprovar compra emergencial Painel CCM-V2</span>
+        </div>
+      </div>
 
       {/* ALERTS TICKER */}
       <div className="flex h-14 shrink-0 items-center overflow-hidden border-y border-[#FF6B6B] bg-gradient-to-r from-[#C81E1E] to-[#FF3B3B]">
