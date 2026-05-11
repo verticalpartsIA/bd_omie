@@ -236,10 +236,13 @@ function PedidosPage() {
                   <th className="px-3 py-2 text-left">Número</th>
                   <th className="px-3 py-2 text-left">Cliente</th>
                   <th className="px-3 py-2 text-left">Vendedor</th>
+                  <th className="px-3 py-2 text-left">Prioridade</th>
+                  <th className="px-3 py-2 text-left">Transp.</th>
                   <th className="px-3 py-2 text-right">Itens</th>
                   <th className="px-3 py-2 text-right">Valor</th>
                   <th className="px-3 py-2 text-right">Aging</th>
                   <th className="px-3 py-2 text-left">Status</th>
+                  <th className="px-3 py-2 text-left">Motivo</th>
                   <th className="px-3 py-2 text-left">Fatura</th>
                 </tr>
               </thead>
@@ -249,8 +252,21 @@ function PedidosPage() {
                   return (
                     <tr key={p.id} className="border-t border-border">
                       <td className="px-3 py-2 font-mono text-xs">{p.numero}</td>
-                      <td className="px-3 py-2">{p.cliente}</td>
+                      <td className="px-3 py-2">
+                        <span className="inline-flex items-center gap-1.5">
+                          {p.vipCliente && <Crown className="h-3 w-3 text-primary" />}
+                          {p.cliente}
+                        </span>
+                      </td>
                       <td className="px-3 py-2 text-muted-foreground">{p.vendedor}</td>
+                      <td className="px-3 py-2">
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                          p.prioridade === "alta" ? "bg-destructive/15 text-destructive" :
+                          p.prioridade === "media" ? "bg-warning/15 text-warning" :
+                          "bg-muted text-muted-foreground"
+                        }`}>{p.prioridade}</span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">{p.transportadora}</td>
                       <td className="px-3 py-2 text-right font-mono">{p.itens}</td>
                       <td className="px-3 py-2 text-right font-mono">{formatBRL(p.valor)}</td>
                       <td className={`px-3 py-2 text-right font-mono ${p.ageingHoras > 48 ? "text-destructive font-bold" : ""}`}>{p.ageingHoras}h</td>
@@ -260,6 +276,7 @@ function PedidosPage() {
                           {statusLabel[p.status]}
                         </span>
                       </td>
+                      <td className="px-3 py-2 text-xs">{p.motivoAtraso ?? <span className="text-muted-foreground">—</span>}</td>
                       <td className="px-3 py-2 text-xs">
                         {p.faturaPaga ? <span className="text-success">Paga</span> : vencida ? <span className="font-bold text-destructive">Vencida</span> : <span className="text-muted-foreground">A vencer</span>}
                       </td>
