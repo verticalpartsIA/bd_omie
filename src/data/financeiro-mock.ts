@@ -106,3 +106,60 @@ export const kpisFinanceiro = {
   ebitda: dre.ebitda,
   ebitdaDelta: 6.7,
 };
+
+// Resultado / margem líquida (estimativa pós impostos)
+export const resultadoLiquido = dre.resultadoLiquido;
+export const margemLiquidaPct = Math.round((resultadoLiquido / dre.receitaLiquida) * 1000) / 10;
+export const margemEbitdaPct = dreEbitdaPct;
+
+// Capital de giro = AR + estoque - AP (estimado)
+const estoqueValor = 1_240_000;
+export const capitalGiro = totalAR + estoqueValor - contasPagar.reduce((s, c) => s + c.valor, 0);
+export const necessidadeCapitalGiro = Math.max(0, contasPagar.reduce((s, c) => s + c.valor, 0) - fluxoFaixas.d30);
+
+// Burn rate (despesas op médias mensais)
+export const burnRate = Math.abs(dre.despesasOperacionais);
+
+// Receita recorrente vs não recorrente (contratos de manutenção vs avulsa)
+export const receitaRecorrente = Math.round(dre.receitaBruta * 0.58);
+export const receitaNaoRecorrente = dre.receitaBruta - receitaRecorrente;
+export const receitaRecorrenteSerie = evolucaoReceitaCusto.map((m, i) => ({
+  mes: m.mes,
+  recorrente: Math.round(m.receita * (0.55 + pseudo(i, 7) * 0.08)),
+  naoRecorrente: m.receita - Math.round(m.receita * (0.55 + pseudo(i, 7) * 0.08)),
+}));
+
+// Cenários de caixa (90 dias)
+export const cenariosCaixa = {
+  conservador: Math.round(fluxoFaixas.d90 * 0.78),
+  provavel: fluxoFaixas.d90,
+  agressivo: Math.round(fluxoFaixas.d90 * 1.18),
+};
+
+// Rentabilidade por cliente (top/bottom)
+const nomesCli = ["Manutenção Vertical", "ConstruTorre", "TopLift Service", "EleManutec", "ProElevador", "Vertical Tech", "ElevaSP", "SkyLift", "MoveUp Eng.", "Predial Service", "TorreSP", "ElevAlto", "Cabos&Cia", "MaxLift", "GiroMec"];
+export const rentabilidadeClientes = nomesCli.map((nome, i) => {
+  const receita = 40_000 + Math.round(pseudo(i, 11) * 280_000);
+  const margemPct = 8 + pseudo(i, 12) * 38 - (i > 11 ? 30 : 0);
+  const lucro = Math.round(receita * (margemPct / 100));
+  return { nome, receita, margemPct: Math.round(margemPct * 10) / 10, lucro };
+}).sort((a, b) => b.lucro - a.lucro);
+
+// EBITDA / margem 12 meses
+export const ebitda12m = [
+  "Nov/24","Dez/24","Jan/25","Fev/25","Mar/25","Abr/25","Mai/25","Jun/25","Jul/25","Ago/25","Set/25","Out/25",
+].map((mes, i) => {
+  const receita = 1_400_000 + Math.round(pseudo(i, 21) * 600_000);
+  const margem = Math.round(receita * (0.32 + pseudo(i, 22) * 0.12));
+  const ebitda = Math.round(receita * (0.18 + pseudo(i, 23) * 0.10));
+  return { mes, receita, margem, ebitda };
+});
+
+// Forecast fechamento mês corrente
+const diasCorridos = 16;
+const diasMes = 30;
+export const forecastMes = {
+  realizado: dre.receitaBruta,
+  projetado: Math.round((dre.receitaBruta / diasCorridos) * diasMes),
+  meta: 2_100_000,
+};
