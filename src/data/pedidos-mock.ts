@@ -33,6 +33,10 @@ export interface Pedido {
   ageingHoras: number;
   faturaVencimento: string;
   faturaPaga: boolean;
+  prioridade?: "alta" | "media" | "baixa";
+  motivoAtraso?: string | null;
+  transportadora?: string;
+  vipCliente?: boolean;
 }
 
 function pseudo(i: number, salt: number): number {
@@ -42,6 +46,9 @@ function pseudo(i: number, salt: number): number {
 const clientesArr = ["Manutenção Vertical", "ConstruTorre", "TopLift Service", "EleManutec", "ProElevador", "Vertical Tech", "ElevaSP", "SkyLift", "MoveUp Engenharia", "Predial Service"];
 const vendedoresArr = ["Ana Souza", "Bruno Lima", "Carla Mendes", "Diego Rocha", "Eduarda Pires"];
 const statusArr: StatusPedido[] = ["novo", "separacao", "faturado", "transito", "entregue", "entregue", "entregue", "problema", "bloqueado"];
+const transportadoras = ["Jadlog", "Total Express", "Braspress", "TNT", "Frota Própria"];
+const motivos = ["Falta de estoque", "Documento fiscal", "Endereço incorreto", "Cliente ausente", "Avaria", "Bloqueio financeiro"];
+const vipClientes = new Set(["Manutenção Vertical", "ConstruTorre", "TopLift Service"]);
 
 export const pedidos: Pedido[] = Array.from({ length: 60 }, (_, i) => {
   const status = statusArr[i % statusArr.length];
@@ -50,6 +57,8 @@ export const pedidos: Pedido[] = Array.from({ length: 60 }, (_, i) => {
   const valor = 1500 + Math.round(pseudo(i, 2) * 28000);
   const dataOff = Math.floor(pseudo(i, 3) * 30);
   const faturaPaga = pseudo(i, 4) > 0.35;
+  const isProblema = status === "problema" || ageingHoras > prazoHoras;
+  const prio = pseudo(i, 6);
   return {
     id: `p-${i + 1}`,
     numero: `PED-${20000 + i}`,
@@ -63,6 +72,10 @@ export const pedidos: Pedido[] = Array.from({ length: 60 }, (_, i) => {
     ageingHoras,
     faturaVencimento: new Date(Date.now() + (15 - dataOff) * 86400000).toISOString(),
     faturaPaga,
+    prioridade: prio > 0.75 ? "alta" : prio > 0.4 ? "media" : "baixa",
+    motivoAtraso: isProblema ? motivos[i % motivos.length] : null,
+    transportadora: transportadoras[i % transportadoras.length],
+    vipCliente: vipClientes.has(clientesArr[i % clientesArr.length]),
   };
 });
 
@@ -93,6 +106,40 @@ export const kpisPedidos = {
   faturasAtraso: atraso,
   atrasoDelta: -1.8,
 };
+
+// OTIF = entregues no prazo E sem problema E itens completos
+const otifOk = entregues.filter((p) => p.ageingHoras <= p.prazoHoras && !p.motivoAtraso).length;
+export const kpisExt = {
+  otif: entregues.length ? Math.round((otifOk / entregues.length) * 1000) / 10 : 0,
+  otifDelta: 0.8,
+  criticos: pedidos.filter((p) => (p.prioridade === "alta" && p.status !== "entregue") || (p.vipCliente && p.ageingHoras > 48 && p.status !== "entregue") || p.status === "problema").length,
+  bloqueadosFinanceiro: pedidos.filter((p) => p.status === "bloqueado").length,
+};
+
+// SLA por etapa
+export const slaPorEtapa = [
+  { etapa: "Entrada", sla: 99.2, meta: 100 },
+  { etapa: "Separação", sla: 87.4, meta: 95 },
+  { etapa: "Faturamento", sla: 96.8, meta: 98 },
+  { etapa: "Coleta", sla: 91.5, meta: 95 },
+  { etapa: "Trânsito", sla: 93.6, meta: 95 },
+];
+
+// Ranking clientes com mais atrasos
+const atrasosPorCliente = new Map<string, number>();
+pedidos.forEach((p) => {
+  if (p.ageingHoras > p.prazoHoras && p.status !== "entregue") {
+    atrasosPorCliente.set(p.cliente, (atrasosPorCliente.get(p.cliente) ?? 0) + 1);
+  }
+});
+export const rankingAtrasosClientes = Array.from(atrasosPorCliente.entries())
+  .map(([cliente, qtd]) => ({ cliente, qtd, vip: vipClientes.has(cliente) }))
+  .sort((a, b) => b.qtd - a.qtd).slice(0, 6);
+
+// Ranking motivos
+const motivosCount = new Map<string, number>();
+pedidos.forEach((p) => { if (p.motivoAtraso) motivosCount.set(p.motivoAtraso, (motivosCount.get(p.motivoAtraso) ?? 0) + 1); });
+export const rankingMotivos = Array.from(motivosCount.entries()).map(([motivo, qtd]) => ({ motivo, qtd })).sort((a, b) => b.qtd - a.qtd);
 
 export const slaHistorico = [
   { mes: "Dez/24", sla: 91.2 },
