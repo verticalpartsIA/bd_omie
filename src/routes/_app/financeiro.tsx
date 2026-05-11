@@ -250,6 +250,54 @@ function FinanceiroPage() {
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Receita recorrente vs não recorrente */}
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h4 className="text-sm font-bold">Receita Recorrente × Não Recorrente</h4>
+            <p className="text-[11px] text-muted-foreground">Previsibilidade do faturamento</p>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={receitaRecorrenteSerie}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => formatBRL(v)} />
+                <Tooltip formatter={(v: unknown) => formatBRL(Number(v))} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="recorrente" name="Recorrente" stackId="a" fill="#F5C400" />
+                <Bar dataKey="naoRecorrente" name="Não recorrente" stackId="a" fill="#808080" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h4 className="text-sm font-bold">Rentabilidade por Cliente</h4>
+            <p className="text-[11px] text-muted-foreground">Top 5 mais lucrativos · Top 3 deficitários</p>
+            <table className="mt-3 w-full text-xs">
+              <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <tr><th className="py-1 text-left">Cliente</th><th className="py-1 text-right">Receita</th><th className="py-1 text-right">Margem%</th><th className="py-1 text-right">Lucro</th></tr>
+              </thead>
+              <tbody>
+                {rentabilidadeClientes.slice(0, 5).map((c) => (
+                  <tr key={c.nome} className="border-t border-border">
+                    <td className="py-1.5 font-semibold">{c.nome}</td>
+                    <td className="py-1.5 text-right font-mono">{formatBRL(c.receita)}</td>
+                    <td className="py-1.5 text-right font-mono text-success font-bold">{c.margemPct}%</td>
+                    <td className="py-1.5 text-right font-mono">{formatBRL(c.lucro)}</td>
+                  </tr>
+                ))}
+                <tr><td colSpan={4} className="border-t border-border pt-2 text-[10px] uppercase tracking-wider text-destructive">Deficitários</td></tr>
+                {rentabilidadeClientes.slice(-3).map((c) => (
+                  <tr key={c.nome} className="border-t border-border">
+                    <td className="py-1.5 font-semibold">{c.nome}</td>
+                    <td className="py-1.5 text-right font-mono">{formatBRL(c.receita)}</td>
+                    <td className="py-1.5 text-right font-mono text-destructive font-bold">{c.margemPct}%</td>
+                    <td className="py-1.5 text-right font-mono text-destructive">{formatBRL(c.lucro)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </>
   );
