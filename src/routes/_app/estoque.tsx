@@ -10,6 +10,9 @@ import { AlertaSeverityBadge } from "@/components/ui/AlertaSeverityBadge";
 import { Button } from "@/components/ui/button";
 import { abcTop15, alertasEstoque, giroPorCategoria, kpisEstoque, produtos, formatBRL } from "@/data/estoque-mock";
 import { toast } from "sonner";
+import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
+import { agingEstoque, capitalParado, compraSugerida, reposicaoSugerida, estoqueAlertas } from "@/data/insights-mock";
+import { ExportMenu } from "@/components/app/ExportMenu";
 
 export const Route = createFileRoute("/_app/estoque")({
   head: () => ({ meta: [{ title: "Estoque — VerticalParts" }] }),
@@ -37,7 +40,7 @@ function EstoquePage() {
           <div className="flex gap-2">
             <button className="rounded border border-border bg-card px-3 py-2 text-xs font-semibold hover:border-neutral-400">Período: 30d</button>
             <button className="rounded border border-border bg-card px-3 py-2 text-xs font-semibold hover:border-neutral-400">Categoria: Todas</button>
-            <button className="rounded bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90">Exportar CSV</button>
+            <ExportMenu filename="estoque" rows={produtos.map((p) => ({ sku: p.sku, nome: p.nome, categoria: p.categoria, estoque: p.estoqueAtual, cobertura: p.diasCobertura, classe: p.classeABC }))} />
           </div>
         </div>
 
@@ -47,6 +50,65 @@ function EstoquePage() {
           <KpiCard accent label="Ruptura" value={`${kpisEstoque.rupturaPercentual}%`} delta={kpisEstoque.rupturaPercentualDelta} hint="SKUs sem estoque" icon={PackageX} />
           <KpiCard label="Valor do Inventário" value={formatBRL(kpisEstoque.valorInventario)} delta={kpisEstoque.valorInventarioDelta} hint="custo total" icon={DollarSign} />
           <KpiCard label="SKUs Ativos" value={kpisEstoque.skusAtivos.toLocaleString("pt-BR")} delta={kpisEstoque.skusAtivosDelta} hint="produtos únicos" icon={Boxes} />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Capital parado &gt; 180d</div>
+            <div className="mt-2 font-mono text-2xl font-extrabold text-destructive">{formatBRL(capitalParado)}</div>
+            <div className="mt-1 text-xs text-muted-foreground">Estoque sem giro relevante</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Compra sugerida</div>
+            <div className="mt-2 font-mono text-2xl font-extrabold text-primary">{formatBRL(compraSugerida)}</div>
+            <div className="mt-1 text-xs text-muted-foreground">Para evitar ruptura nos próximos 30d</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Aging do estoque</div>
+            <div className="mt-3 space-y-1.5">
+              {agingEstoque.map((a) => (
+                <div key={a.faixa} className="flex items-center justify-between text-[11px]">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: a.cor }} />{a.faixa}</span>
+                  <span className="font-mono">{a.skus} SKUs · {formatBRL(a.valor)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6"><AlertasRecomendacoes items={estoqueAlertas} /></div>
+
+        <div className="mt-6 rounded-xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-4">
+            <h4 className="text-sm font-bold">Recomendação de reposição</h4>
+            <p className="text-[11px] text-muted-foreground">SKUs com cobertura crítica · impacto no caixa por compra</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left">SKU</th><th className="px-3 py-2 text-left">Produto</th>
+                  <th className="px-3 py-2 text-right">Atual</th><th className="px-3 py-2 text-right">Sugerido</th>
+                  <th className="px-3 py-2 text-right">Cob.</th><th className="px-3 py-2 text-right">Impacto caixa</th>
+                  <th className="px-3 py-2 text-left">Fornecedor</th><th className="px-3 py-2 text-right">Lead</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reposicaoSugerida.map((r) => (
+                  <tr key={r.sku} className="border-t border-border">
+                    <td className="px-3 py-2 font-mono text-xs">{r.sku}</td>
+                    <td className="px-3 py-2 text-xs">{r.nome}</td>
+                    <td className="px-3 py-2 text-right font-mono">{r.atual}</td>
+                    <td className="px-3 py-2 text-right font-mono font-bold text-primary">+{r.sugerido}</td>
+                    <td className={`px-3 py-2 text-right font-mono ${r.cobertura < 7 ? "text-destructive font-bold" : "text-warning"}`}>{r.cobertura}d</td>
+                    <td className="px-3 py-2 text-right font-mono">{formatBRL(r.impactoCaixa)}</td>
+                    <td className="px-3 py-2 text-xs">{r.fornecedor}</td>
+                    <td className="px-3 py-2 text-right font-mono text-xs">{r.leadTime}d</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
