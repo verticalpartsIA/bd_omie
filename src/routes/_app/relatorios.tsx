@@ -16,6 +16,7 @@ import { clientes } from "@/data/clientes-mock";
 import { margemCategoria, evolucaoReceitaCusto, dre, formatBRL } from "@/data/financeiro-mock";
 import { produtos, categorias } from "@/data/estoque-mock";
 import { toast } from "sonner";
+import { ExportMenu } from "@/components/app/ExportMenu";
 
 export const Route = createFileRoute("/_app/relatorios")({
   head: () => ({ meta: [{ title: "Relatórios — VerticalParts" }] }),
@@ -69,6 +70,8 @@ function RelatoriosPage() {
   }).sort((a, b) => b.receita - a.receita);
 
   const onExport = () => toast.success("Relatório exportado para CSV");
+  const onSave = () => toast.success(`Relatório "${dimensao} por ${metrica}" salvo na biblioteca`);
+  const onSchedule = () => toast.success("Relatório agendado: envio semanal segunda 08:00 por e-mail");
 
   return (
     <>
@@ -259,7 +262,9 @@ function RelatoriosPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" onClick={onExport}><Download className="mr-2 h-4 w-4" /> Exportar</Button>
+                <Button variant="outline" onClick={onSave}>Salvar relatório</Button>
+                <Button variant="outline" onClick={onSchedule}>Agendar envio</Button>
+                <ExportMenu filename={`custom-${dimensao}-${metrica}`} rows={sorted.map((r) => ({ [dimensao]: r.chave, receita: r.receita, margem: r.margem, qtd: r.quantidade, ticket: r.ticket }))} />
               </div>
 
               <div className="mt-4 overflow-x-auto">
@@ -285,6 +290,23 @@ function RelatoriosPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+              <h4 className="text-sm font-bold">Relatórios prontos da biblioteca</h4>
+              <p className="text-[11px] text-muted-foreground">Modelos pré-configurados respeitando suas permissões</p>
+              <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+                {[
+                  "DRE consolidado mensal",
+                  "Top 20 clientes do trimestre",
+                  "Inventário com cobertura crítica",
+                  "Performance da equipe comercial",
+                  "Margem por categoria",
+                  "Aging de inadimplência",
+                ].map((r) => (
+                  <button key={r} onClick={() => toast.info(`Abrindo: ${r}`)} className="rounded border border-border bg-background px-3 py-2 text-left text-xs font-semibold hover:border-primary">{r}</button>
+                ))}
               </div>
             </div>
           </TabsContent>

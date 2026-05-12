@@ -6,6 +6,8 @@ import { useSidebarToggle } from "../_app";
 import { ClasseBadge } from "@/components/ui/ClasseBadge";
 import { CoberturaBar } from "@/components/ui/CoberturaBar";
 import { categorias, formatBRL, produtos } from "@/data/estoque-mock";
+import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
+import { categoriaAcao } from "@/data/insights-mock";
 
 export const Route = createFileRoute("/_app/categorias")({
   head: () => ({ meta: [{ title: "Categorias — VerticalParts" }] }),
@@ -72,6 +74,8 @@ function CategoriasPage() {
             );
           })}
         </div>
+
+        <div className="mt-6"><AlertasRecomendacoes title="Categorias que exigem ação" items={categoriaAcao} /></div>
       </main>
     </>
   );

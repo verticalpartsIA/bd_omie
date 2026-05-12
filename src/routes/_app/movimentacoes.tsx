@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MovimentacoesChart } from "@/components/charts/MovimentacoesChart";
 import { movimentacoes, movimentacoesPorDia } from "@/data/estoque-mock";
+import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
+import { movimentacoesAlertas } from "@/data/insights-mock";
+import { ExportMenu } from "@/components/app/ExportMenu";
 
 export const Route = createFileRoute("/_app/movimentacoes")({
   head: () => ({ meta: [{ title: "Movimentações — VerticalParts" }] }),
@@ -68,6 +71,10 @@ function MovimentacoesPage() {
           <Mini label="Entradas" value={`+${totalEntradas.toLocaleString("pt-BR")}`} cls="text-[#2E7D32]" />
           <Mini label="Saídas" value={`-${totalSaidas.toLocaleString("pt-BR")}`} cls="text-[#C62828]" />
         </div>
+
+        <div className="mt-4 flex justify-end"><ExportMenu filename="movimentacoes" rows={filtered.slice(0, 500).map((m) => ({ data: m.data, tipo: m.tipo, sku: m.sku, produto: m.nomeProduto, qtd: m.quantidade, saldo: m.saldoApos, origem: m.origem, responsavel: m.responsavel }))} label="Exportar auditoria" /></div>
+
+        <div className="mt-4"><AlertasRecomendacoes title="Anomalias detectadas" items={movimentacoesAlertas} /></div>
 
         <div className="mt-6 rounded-xl border border-border bg-card shadow-sm">
           <div className="border-b border-border px-5 py-4">

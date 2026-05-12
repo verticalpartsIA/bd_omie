@@ -5,6 +5,9 @@ import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 import { RFMScatter } from "@/components/charts/RFMScatter";
 import { SegmentoLTVChart } from "@/components/charts/SegmentoLTVChart";
+import { playbooksRFM, receitaRecuperavel } from "@/data/insights-mock";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   clientes, distribuicaoRFM, formatBRL, rfmColor, rfmLabel, segmentosLabel, ticketPorSegmento,
   type RFMSegment,
@@ -26,9 +29,16 @@ function SegmentosPage() {
     <>
       <Topbar crumb="CADASTROS · SEGMENTAÇÃO" title="Segmentação RFM" icon={<Tag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
       <main className="flex-1 px-7 pb-16 pt-6">
-        <div className="mb-5">
-          <h2 className="text-[26px] font-extrabold tracking-tight">Segmentação Comportamental</h2>
-          <p className="mt-1 text-sm text-muted-foreground">RFM (Recência, Frequência, Monetário), ticket e LTV por segmento de negócio.</p>
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-[26px] font-extrabold tracking-tight">Segmentação Comportamental</h2>
+            <p className="mt-1 text-sm text-muted-foreground">RFM (Recência, Frequência, Monetário), ticket e LTV por segmento de negócio.</p>
+          </div>
+          <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-right">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Receita recuperável estimada</div>
+            <div className="font-mono text-2xl font-extrabold text-primary">{formatBRL(receitaRecuperavel)}</div>
+            <div className="text-[10px] text-muted-foreground">se 100% dos em risco / inativos forem reativados em 6m</div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -106,12 +116,18 @@ function SegmentosPage() {
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {(Object.keys(rfmLabel) as RFMSegment[]).map((seg) => {
             const list = clientes.filter((c) => c.rfm.segmento === seg).slice(0, 5);
+            const pb = playbooksRFM[seg];
             return (
               <div key={seg} className="rounded-xl border border-border bg-card shadow-sm">
                 <div className="flex items-center gap-2 border-b border-border px-4 py-3">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: rfmColor[seg] }} />
                   <h4 className="text-xs font-bold">{rfmLabel[seg]}</h4>
                   <span className="ml-auto font-mono text-[10px] text-muted-foreground">{clientes.filter((c) => c.rfm.segmento === seg).length}</span>
+                </div>
+                <div className="border-b border-border bg-muted/30 px-4 py-2 text-[11px]">
+                  <div><span className="font-bold">Ação:</span> {pb.acao}</div>
+                  <div className="text-muted-foreground">{pb.canal}</div>
+                  <div className="text-[10px] text-primary">→ {pb.meta}</div>
                 </div>
                 <ul className="divide-y divide-border text-xs">
                   {list.length === 0 && <li className="px-4 py-4 text-muted-foreground">Sem clientes</li>}
@@ -122,6 +138,9 @@ function SegmentosPage() {
                     </li>
                   ))}
                 </ul>
+                <div className="border-t border-border p-2">
+                  <Button size="sm" variant="outline" className="w-full text-[11px]" onClick={() => toast.success(`Campanha criada para ${rfmLabel[seg]}`)}>Criar Campanha</Button>
+                </div>
               </div>
             );
           })}

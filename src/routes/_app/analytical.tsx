@@ -8,6 +8,9 @@ import { Topbar } from "@/components/app/Topbar";
 import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
+import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
+import { ExportMenu } from "@/components/app/ExportMenu";
+import { forecastMes, oportunidades, cohortClientes } from "@/data/insights-mock";
 
 export const Route = createFileRoute("/_app/analytical")({
   head: () => ({ meta: [{ title: "Analytical Dashboard — VerticalParts" }] }),
@@ -91,13 +94,11 @@ function AnalyticalDashboard() {
               <option>Ano corrente</option>
             </select>
             <select className="rounded border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground/70">
-              <option>Todos canais</option>
-              <option>Manutenção</option>
-              <option>Cliente Final</option>
+              <option>vs período anterior</option>
+              <option>vs ano anterior</option>
+              <option>vs trimestre anterior</option>
             </select>
-            <button className="rounded bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90">
-              Exportar
-            </button>
+            <ExportMenu filename="analytical" rows={topProducts} />
           </div>
         </div>
 
@@ -106,6 +107,18 @@ function AnalyticalDashboard() {
           <KpiCard label="Recompra" value="38%" delta={3} hint="clientes com 2+ pedidos" icon={Users} />
           <KpiCard label="Itens / pedido" value="3.8" delta={2} hint="média do mês" icon={Package} />
           <KpiCard label="Top vendedor" value="Carla M." delta={12} hint="218 pedidos" icon={Award} />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-1">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Forecast do mês</div>
+            <div className="mt-2 font-mono text-3xl font-extrabold">R$ {(forecastMes.projetado / 1_000_000).toFixed(2).replace(".", ",")}M</div>
+            <div className="mt-1 text-xs text-muted-foreground">Meta R$ {(forecastMes.meta / 1_000_000).toFixed(2).replace(".", ",")}M · {forecastMes.pctMeta}% projetado</div>
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${forecastMes.pctMeta}%` }} />
+            </div>
+          </div>
+          <div className="lg:col-span-2"><AlertasRecomendacoes title="Oportunidades detectadas" items={oportunidades} /></div>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -221,6 +234,33 @@ function AnalyticalDashboard() {
                 <Line type="monotone" dataKey="v" stroke="#F5C400" strokeWidth={2.5} dot={{ r: 3, fill: "#F5C400" }} />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-md border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-4">
+            <h4 className="text-sm font-bold">Cohort de Clientes — retenção mensal</h4>
+            <p className="text-[11px] text-muted-foreground">% de clientes que continuaram comprando após 1, 2, 3+ meses</p>
+          </div>
+          <div className="overflow-x-auto p-3">
+            <table className="w-full text-xs">
+              <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <tr><th className="px-2 py-2 text-left">Coorte</th><th>Novos</th><th>M+1</th><th>M+2</th><th>M+3</th><th>M+4</th><th>M+5</th></tr>
+              </thead>
+              <tbody>
+                {cohortClientes.map((c) => (
+                  <tr key={c.mes} className="border-t border-border text-center">
+                    <td className="px-2 py-2 text-left font-semibold">{c.mes}</td>
+                    <td className="font-mono">{c.novos}</td>
+                    {([c.m1, c.m2, c.m3, c.m4, c.m5] as Array<number | undefined>).map((v, i) => (
+                      <td key={i} className="font-mono">
+                        {v == null ? <span className="text-muted-foreground">—</span> : <span className={v / c.novos < 0.5 ? "text-destructive" : v / c.novos < 0.7 ? "text-warning" : "text-success"}>{v} ({Math.round((v / c.novos) * 100)}%)</span>}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
