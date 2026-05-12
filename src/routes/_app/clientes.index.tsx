@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConcentracaoChart } from "@/components/charts/ConcentracaoChart";
 import { ReativacaoChart } from "@/components/charts/ReativacaoChart";
+import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
+import { ExportMenu } from "@/components/app/ExportMenu";
+import { churnRate, riscoAlto, clientesAcaoHoje } from "@/data/insights-mock";
 import {
   clientes, concentracaoPareto, formatBRL, kpisClientes, reativacaoMensal,
   rfmColor, rfmLabel, segmentosLabel, top10Clientes,
@@ -55,7 +58,7 @@ function ClientesPage() {
           </div>
           <div className="flex gap-2">
             <Link to="/segmentos" className="rounded border border-border bg-card px-3 py-2 text-xs font-semibold hover:border-neutral-400">Ver segmentação RFM →</Link>
-            <button className="rounded bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90">Exportar CSV</button>
+            <ExportMenu filename="clientes" rows={filtered.map((c) => ({ codigo: c.codigo, nome: c.nome, segmento: c.segmento, cidade: c.cidade, uf: c.uf, pedidos: c.totalPedidos, receita: c.receitaTotal, ticket: c.ticketMedio, ultima: c.diasSemComprar, status: c.status }))} />
           </div>
         </div>
 
@@ -68,6 +71,12 @@ function ClientesPage() {
           <KpiCard label="Taxa de Reativação" value={`${kpisClientes.taxaReativacao}%`} delta={kpisClientes.taxaReativacaoDelta} hint="inativos → ativos" icon={RefreshCw} />
           <KpiCard label="Concentração Top 10" value={`${kpisClientes.concentracaoTop10}%`} hint="da receita total" icon={Crown} />
           <KpiCard label="LTV Médio" value={formatBRL(kpisClientes.ltvMedio)} hint="por cliente" icon={TrendingUp} />
+          <KpiCard accent label="Churn Rate" value={`${churnRate}%`} hint="clientes inativos" icon={UserX} />
+          <KpiCard label="Risco Alto" value={String(riscoAlto)} hint="ação imediata" icon={AlertTriangle} />
+        </div>
+
+        <div className="mt-6">
+          <AlertasRecomendacoes title="Clientes que exigem ação hoje" items={clientesAcaoHoje} empty="Nenhum cliente em risco crítico no momento." />
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
