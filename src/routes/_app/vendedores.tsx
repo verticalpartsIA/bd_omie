@@ -12,6 +12,8 @@ import {
   vendedores, funil, conversaoEtapas, cacPorCanal, comissaoMensal,
   kpisComercial, formatBRL, etapaLabel, canalLabel, totalMeta, totalRealizado,
 } from "@/data/comercial-mock";
+import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
+import { vendedoresAcao } from "@/data/insights-mock";
 
 export const Route = createFileRoute("/_app/vendedores")({
   head: () => ({ meta: [{ title: "Comercial — VerticalParts" }] }),
@@ -190,6 +192,8 @@ function ComercialPage() {
                   <th className="px-3 py-2 text-right">Meta</th>
                   <th className="px-3 py-2 text-right">Realizado</th>
                   <th className="px-3 py-2 text-right">% Meta</th>
+                  <th className="px-3 py-2 text-right">Margem est.</th>
+                  <th className="px-3 py-2 text-right">Desconto méd.</th>
                   <th className="px-3 py-2 text-right">Pedidos</th>
                   <th className="px-3 py-2 text-right">Ticket</th>
                   <th className="px-3 py-2 text-right">Comissão</th>
@@ -198,12 +202,16 @@ function ComercialPage() {
               <tbody>
                 {ranked.map((v) => {
                   const pct = Math.round((v.realizado / v.meta) * 100);
+                  const margem = Math.round(v.realizado * 0.34);
+                  const desconto = Math.round(((v.id.charCodeAt(2) % 7) + 4) * 10) / 10;
                   return (
                     <tr key={v.id} className="border-t border-border">
                       <td className="px-3 py-2 font-medium">{v.nome}</td>
                       <td className="px-3 py-2 text-right font-mono">{formatBRL(v.meta)}</td>
                       <td className="px-3 py-2 text-right font-mono">{formatBRL(v.realizado)}</td>
                       <td className={`px-3 py-2 text-right font-mono font-bold ${pct >= 80 ? "text-success" : pct >= 50 ? "text-primary" : "text-destructive"}`}>{pct}%</td>
+                      <td className="px-3 py-2 text-right font-mono">{formatBRL(margem)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{desconto}%</td>
                       <td className="px-3 py-2 text-right font-mono">{v.pedidos}</td>
                       <td className="px-3 py-2 text-right font-mono">{formatBRL(v.ticketMedio)}</td>
                       <td className="px-3 py-2 text-right font-mono">{formatBRL(v.comissao)}</td>
@@ -213,6 +221,10 @@ function ComercialPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <AlertasRecomendacoes title="Vendedores que precisam de atenção" items={vendedoresAcao} empty="Time inteiro no ritmo esperado." />
         </div>
       </main>
     </>
