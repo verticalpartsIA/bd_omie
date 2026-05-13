@@ -125,10 +125,29 @@ export const ClaudeChat = forwardRef<ClaudeChatHandle, Props>(function ClaudeCha
   }));
 
   const copyMessage = useCallback((text: string, idx: number) => {
-    navigator.clipboard.writeText(text).then(() => {
+    const done = () => {
       setCopiedIdx(idx);
       setTimeout(() => setCopiedIdx(null), 2000);
-    });
+    };
+    // execCommand fallback for non-HTTPS / older browsers
+    const legacy = () => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        done();
+      } catch {/* silent */}
+    };
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(legacy);
+    } else {
+      legacy();
+    }
   }, []);
 
   const suggestions = buildSuggestions(kpis, alertas);

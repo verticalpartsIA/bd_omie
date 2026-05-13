@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Area,
@@ -30,6 +30,7 @@ import {
   Activity,
   Repeat,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
 import { KpiCard } from "@/components/app/KpiCard";
@@ -73,9 +74,16 @@ const categoryData = [
 ];
 
 const channelData = [
-  { name: "Manutenção", value: 62 },
+  { name: "Revenda", value: 62 },
   { name: "Cliente Final", value: 38 },
 ];
+
+type Period = "30d" | "90d" | "12m";
+const PERIOD_LABELS: Record<Period, string> = {
+  "30d": "Últimos 30 dias",
+  "90d": "Últimos 90 dias",
+  "12m": "Últimos 12 meses",
+};
 
 const ordersData = [
   { d: "S1", v: 38 },
@@ -102,15 +110,54 @@ function currentPeriodLabel() {
 function StrategicDashboard() {
   const toggle = useSidebarToggle();
   const claudeRef = useRef<ClaudeChatHandle>(null);
-  const { kpis: k, cockpitCEO, concentracao, isLoading, isError } =
+  const [period, setPeriod] = useState<Period>("30d");
+  const { kpis: rawK, cockpitCEO, concentracao, isLoading, isError } =
     useStrategicDashboard();
 
+  // ── Derive filtered KPIs based on selected period ───────────────────────────
+  const k = (() => {
+    const months = rawK.ebitda12m;
+    if (!months.length) return rawK;
+    // Pick window
+    let slice: typeof months;
+    if (period === "30d") {
+      const m = months.length >= 2 ? months[months.length - 2] : months[months.length - 1];
+      slice = m ? [m] : [months[months.length - 1]];
+    } else if (period === "90d") {
+      slice = months.slice(-4, -1); // last 3 complete months
+    } else {
+      slice = months.slice(0, -1); // all complete months (12m)
+    }
+    if (!slice.length) return rawK;
+    const totalReceita = slice.reduce((s, m) => s + m.receita, 0);
+    const totalEbitda  = slice.reduce((s, m) => s + m.ebitda, 0);
+    const totalMargem  = slice.reduce((s, m) => s + m.margem, 0);
+    const avgReceita   = totalReceita / slice.length;
+    const avgEbitda    = totalEbitda / slice.length;
+    const ebitdaPct    = avgReceita > 0 ? Math.round((avgEbitda / avgReceita) * 1000) / 10 : 0;
+    const margemBruta  = avgReceita > 0 ? Math.round((totalMargem / slice.length / avgReceita) * 1000) / 10 : 0;
+    const resLiquido   = Math.round(avgEbitda * 0.87);
+    const margemLiqPct = avgReceita > 0 ? Math.round((resLiquido / avgReceita) * 1000) / 10 : 0;
+    const prevEbitda   = slice.length > 1 ? slice[0].ebitda : (rawK.ebitda12m[rawK.ebitda12m.length - 3]?.ebitda ?? 0);
+    const ebitdaDelta  = prevEbitda > 0 ? Math.round(((avgEbitda - prevEbitda) / prevEbitda) * 1000) / 10 : 0;
+    return {
+      ...rawK,
+      receita: period === "12m" ? totalReceita : avgReceita,
+      ebitda: period === "12m" ? totalEbitda : avgEbitda,
+      ebitdaPct,
+      ebitdaDelta,
+      margemBruta,
+      resultadoLiquido: period === "12m" ? Math.round(totalEbitda * 0.87) : resLiquido,
+      margemLiquida: margemLiqPct,
+    };
+  })();
+
   const forecastPctMeta =
-    k.forecastMes.meta > 0
-      ? Math.round((k.forecastMes.projetado / k.forecastMes.meta) * 100)
+    rawK.forecastMes.meta > 0
+      ? Math.round((rawK.forecastMes.projetado / rawK.forecastMes.meta) * 100)
       : 0;
 
-  const period = currentPeriodLabel();
+  const periodLabel = currentPeriodLabel();
 
   if (isLoading) {
     return (
@@ -159,16 +206,26 @@ function StrategicDashboard() {
           <div>
             <h2 className="text-[26px] font-extrabold tracking-tight">
               Visão executiva ·{" "}
-              <span className="text-[#C99E00]">{period}</span>
+              <span className="text-[#C99E00]">{periodLabel}</span>
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               O que está acontecendo, o que está em risco e o que decidir hoje.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="rounded border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground/70 hover:border-neutral-400">
-              Últimos 30 dias
-            </button>
+            {(["30d", "90d", "12m"] as Period[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`rounded border px-3 py-2 text-xs font-semibold transition-colors ${
+                  period === p
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-foreground/70 hover:border-neutral-400"
+                }`}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
             <ExportMenu
               filename="strategic-dashboard"
               rows={
@@ -236,9 +293,18 @@ function StrategicDashboard() {
             />
           </div>
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h4 className="text-sm font-bold">
-              Forecast de Fechamento · {period}
-            </h4>
+            <div className="mb-1 flex items-start justify-between">
+              <h4 className="text-sm font-bold">
+                Forecast de Fechamento · {periodLabel}
+              </h4>
+              <button
+                onClick={() => claudeRef.current?.ask(`O forecast de fechamento do mês está em ${formatBRL(rawK.forecastMes.projetado)} (${forecastPctMeta}% da meta de ${formatBRL(rawK.forecastMes.meta)}). O realizado até agora é ${formatBRL(rawK.forecastMes.realizado)}. Qual a probabilidade de bater a meta e quais ações aceleram o fechamento?`)}
+                title="Perguntar ao Analista IA"
+                className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <p className="text-[11px] text-muted-foreground">
               Projeção até o fim do mês vs meta
             </p>
@@ -315,10 +381,10 @@ function StrategicDashboard() {
           />
           <KpiCard
             label="Clientes ativos"
-            value="—"
-            hint="Manutenção + cliente final"
+            value={k.clientesAtivos > 0 ? k.clientesAtivos.toLocaleString("pt-BR") : "—"}
+            hint="Revenda + Cliente Final"
             icon={Users}
-            onAskClaude={() => claudeRef.current?.ask(`Quais são os top clientes por receita nos últimos 12 meses? Mostre o ranking e analise a concentração de receita.`)}
+            onAskClaude={() => claudeRef.current?.ask(`Temos ${k.clientesAtivos} clientes ativos (entre Revenda e Cliente Final). Quais são os top clientes por receita nos últimos 12 meses e como está a concentração de risco?`)}
           />
           <KpiCard
             label="SKUs em estoque"
@@ -332,12 +398,19 @@ function StrategicDashboard() {
         {/* Receita × Margem × EBITDA 12 meses + Concentração */}
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-            <h4 className="text-sm font-bold">
-              Receita × Margem × EBITDA · 12 meses
-            </h4>
-            <p className="text-[11px] text-muted-foreground">
-              Riqueza absoluta vs operacional
-            </p>
+            <div className="mb-1 flex items-start justify-between">
+              <div>
+                <h4 className="text-sm font-bold">Receita × Margem × EBITDA · 12 meses</h4>
+                <p className="text-[11px] text-muted-foreground">Riqueza absoluta vs operacional</p>
+              </div>
+              <button
+                onClick={() => claudeRef.current?.ask(`Analisando a tendência dos últimos 12 meses de Receita, Margem Bruta e EBITDA: quais são os meses de melhor e pior desempenho e o que explica as variações? Qual é a tendência para os próximos meses?`)}
+                title="Perguntar ao Analista IA"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <ResponsiveContainer width="100%" height={260}>
               <ComposedChart
                 data={k.ebitda12m}
@@ -376,10 +449,19 @@ function StrategicDashboard() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h4 className="text-sm font-bold">Concentração de Receita</h4>
-            <p className="text-[11px] text-muted-foreground">
-              Risco de dependência de poucos clientes
-            </p>
+            <div className="mb-1 flex items-start justify-between">
+              <div>
+                <h4 className="text-sm font-bold">Concentração de Receita</h4>
+                <p className="text-[11px] text-muted-foreground">Risco de dependência de poucos clientes</p>
+              </div>
+              <button
+                onClick={() => claudeRef.current?.ask(`Os top 5 clientes respondem por ${concentracao.top5Pct}% da receita e os top 10 por ${concentracao.top10Pct}%. Qual o risco real dessa concentração e quais estratégias de diversificação priorizar?`)}
+                title="Perguntar ao Analista IA"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <div className="mt-3 space-y-3">
               <div>
                 <div className="mb-1 flex items-baseline justify-between">
@@ -452,6 +534,14 @@ function StrategicDashboard() {
                   2025 vs 2024 · em milhares R$
                 </p>
               </div>
+              <div className="flex items-center gap-3">
+              <button
+                onClick={() => claudeRef.current?.ask(`Comparando a evolução de receita de 2025 vs 2024 mês a mês: em quais meses o crescimento foi maior? Qual o crescimento acumulado e o que pode explicar as variações?`)}
+                title="Perguntar ao Analista IA"
+                className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
               <div className="flex items-center gap-3 text-[11px] font-semibold text-foreground/70">
                 <span className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
@@ -461,6 +551,7 @@ function StrategicDashboard() {
                   <span className="h-2.5 w-2.5 rounded-sm bg-neutral-400" />
                   2024
                 </span>
+              </div>
               </div>
             </div>
             <div className="h-[280px] p-4">
@@ -521,11 +612,18 @@ function StrategicDashboard() {
           </div>
 
           <div className="rounded-md border border-border bg-card shadow-sm">
-            <div className="border-b border-border px-5 py-4">
-              <h4 className="text-sm font-bold">Mix por Categoria</h4>
-              <p className="text-[11px] text-muted-foreground">
-                Receita por família de produto
-              </p>
+            <div className="flex items-start justify-between border-b border-border px-5 py-4">
+              <div>
+                <h4 className="text-sm font-bold">Mix por Categoria</h4>
+                <p className="text-[11px] text-muted-foreground">Receita por família de produto</p>
+              </div>
+              <button
+                onClick={() => claudeRef.current?.ask(`Analisando o mix de receita por categoria de produto (Polias, Cabos, Painéis, Motores, Degraus): qual categoria está crescendo mais e qual está perdendo participação? Quais ações tomar para melhorar o mix?`)}
+                title="Perguntar ao Analista IA"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
             </div>
             <div className="h-[280px] p-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -558,11 +656,18 @@ function StrategicDashboard() {
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="rounded-md border border-border bg-card shadow-sm">
-            <div className="border-b border-border px-5 py-4">
-              <h4 className="text-sm font-bold">Pedidos por Semana</h4>
-              <p className="text-[11px] text-muted-foreground">
-                Últimas 7 semanas
-              </p>
+            <div className="flex items-start justify-between border-b border-border px-5 py-4">
+              <div>
+                <h4 className="text-sm font-bold">Pedidos por Semana</h4>
+                <p className="text-[11px] text-muted-foreground">Últimas 7 semanas</p>
+              </div>
+              <button
+                onClick={() => claudeRef.current?.ask(`Analisando o volume de pedidos por semana nas últimas 7 semanas: há uma tendência de aceleração ou queda? Quais semanas foram atípicas e o que pode ter causado variações?`)}
+                title="Perguntar ao Analista IA"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
             </div>
             <div className="h-[220px] p-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -599,11 +704,18 @@ function StrategicDashboard() {
           </div>
 
           <div className="rounded-md border border-border bg-card shadow-sm">
-            <div className="border-b border-border px-5 py-4">
-              <h4 className="text-sm font-bold">Tipo de Cliente</h4>
-              <p className="text-[11px] text-muted-foreground">
-                Manutenção vs Cliente final
-              </p>
+            <div className="flex items-start justify-between border-b border-border px-5 py-4">
+              <div>
+                <h4 className="text-sm font-bold">Tipo de Cliente</h4>
+                <p className="text-[11px] text-muted-foreground">Revenda vs Cliente Final</p>
+              </div>
+              <button
+                onClick={() => claudeRef.current?.ask(`A VerticalParts vende para dois segmentos: "Revenda" (empresas de manutenção que revendem/usam as peças) e "Cliente Final" (usuários diretos). O mix atual é ~62% Revenda e 38% Cliente Final. Qual o impacto dessa distribuição na margem e no risco do negócio?`)}
+                title="Perguntar ao Analista IA"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
             </div>
             <div className="h-[220px] p-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -632,9 +744,18 @@ function StrategicDashboard() {
                   Receita acumulada
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => claudeRef.current?.ask(`O crescimento de receita YoY (ano sobre ano) está em +18%. Quais os principais drivers desse crescimento e como sustentar ou acelerar essa taxa nos próximos meses?`)}
+                  title="Perguntar ao Analista IA"
+                  className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                </button>
               <span className="inline-flex items-center gap-1 rounded bg-success/15 px-2 py-1 text-xs font-bold text-success">
                 <TrendingUp className="h-3 w-3" /> +18%
               </span>
+              </div>
             </div>
             <div className="h-[220px] p-4">
               <ResponsiveContainer width="100%" height="100%">

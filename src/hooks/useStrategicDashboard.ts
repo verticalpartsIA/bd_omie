@@ -92,6 +92,8 @@ export interface StrategicKpis {
   forecastMes: { realizado: number; projetado: number; meta: number };
   // Chart data
   ebitda12m: Ebitda12mItem[];
+  // Clientes ativos
+  clientesAtivos: number;
 }
 
 export interface ConcentracaoData {
@@ -193,6 +195,20 @@ function useReceitaRecorrente() {
   });
 }
 
+function useClientesAtivos() {
+  return useQuery<number>({
+    queryKey: ["clientes_ativos_count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("vw_concentracao_clientes")
+        .select("*", { count: "exact", head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 function useConcentracao() {
   return useQuery<ConcentracaoData>({
     queryKey: ["concentracao_clientes"],
@@ -229,6 +245,7 @@ export function useStrategicDashboard() {
   const alertasQ = useAlertasCEO();
   const recorrenteQ = useReceitaRecorrente();
   const concentracaoQ = useConcentracao();
+  const clientesAtivosQ = useClientesAtivos();
 
   const isLoading =
     ebitda12mQ.isLoading ||
@@ -315,6 +332,7 @@ export function useStrategicDashboard() {
     caixa90,
     forecastMes,
     ebitda12m,
+    clientesAtivos: clientesAtivosQ.data ?? 0,
   };
 
   return {
