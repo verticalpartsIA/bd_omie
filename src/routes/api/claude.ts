@@ -126,6 +126,26 @@ const TOOLS: Anthropic.Tool[] = [
       },
     },
   },
+  {
+    name: "buscar_mix_familias",
+    description:
+      "Retorna o mix de vendas por família de produto nos últimos 12 meses (volume de unidades vendidas por categoria). Use para responder perguntas sobre 'Mix por Categoria', participação de cada família, quais categorias vendem mais, etc.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        limite: { type: "number", description: "Máximo de famílias (padrão 15)" },
+      },
+    },
+  },
+  {
+    name: "buscar_evolucao_receita",
+    description:
+      "Retorna a evolução mensal de receita, EBITDA e margem dos últimos 12 meses para análise de tendências e comparação YoY.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
 ];
 
 // ── Tool executor ─────────────────────────────────────────────────────────────
@@ -289,6 +309,48 @@ async function executeTool(
           limit: String(input.limite ?? 20),
         });
         return JSON.stringify({ total: data.length, clientes: data });
+      }
+
+      case "buscar_mix_familias": {
+        // Fetch all products with family + sales volume, then group in JS
+        const data = await sbQuery("vw_estoque_inteligente", {
+          select: "descricao_familia,total_vendido_12m,media_mensal_saidas,quantidade_estoque",
+          limit: "5000",
+        });
+        const byFamily: Record<string, { volume: number; media: number; qtd_skus: number; skus_zerados: number }> = {};
+        for (const row of data as any[]) {
+          const f = (row.descricao_familia as string)?.trim() || "Sem categoria";
+          if (!byFamily[f]) byFamily[f] = { volume: 0, media: 0, qtd_skus: 0, skus_zerados: 0 };
+          byFamily[f].volume += Number(row.total_vendido_12m ?? 0);
+          byFamily[f].media  += Number(row.media_mensal_saidas ?? 0);
+          byFamily[f].qtd_skus += 1;
+          if (Number(row.quantidade_estoque ?? 0) <= 0) byFamily[f].skus_zerados += 1;
+        }
+        const totalVol = Object.values(byFamily).reduce((s, v) => s + v.volume, 0);
+        const sorted = Object.entries(byFamily)
+          .sort(([, a], [, b]) => b.volume - a.volume)
+          .slice(0, Number(input.limite ?? 15))
+          .map(([familia, v]) => ({
+            familia,
+            volume_12m: Math.round(v.volume),
+            media_mensal: Math.round(v.media),
+            participacao_pct: totalVol > 0 ? Math.round((v.volume / totalVol) * 1000) / 10 : 0,
+            qtd_skus: v.qtd_skus,
+            skus_zerados: v.skus_zerados,
+          }));
+        return JSON.stringify({
+          nota: "Volume em unidades vendidas (não R$) — proxy de participação por família",
+          total_volume_12m: Math.round(totalVol),
+          familias: sorted,
+        });
+      }
+
+      case "buscar_evolucao_receita": {
+        const data = await sbQuery("vw_ebitda_12m", {
+          select: "mes,mes_dt,receita,margem,ebitda",
+          order: "mes_dt.asc",
+        });
+        return JSON.stringify({ meses: data.length, historico: data });
       }
 
       default:

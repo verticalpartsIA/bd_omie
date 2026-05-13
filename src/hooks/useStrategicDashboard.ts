@@ -203,6 +203,39 @@ function useReceitaRecorrente() {
   });
 }
 
+export interface MixFamiliaItem {
+  name: string;
+  value: number; // volume 12m
+  pct: number;
+}
+
+function useMixFamilias() {
+  return useQuery<MixFamiliaItem[]>({
+    queryKey: ["mix_familias"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_estoque_inteligente")
+        .select("descricao_familia,total_vendido_12m");
+      if (error) throw error;
+      const byFamily: Record<string, number> = {};
+      for (const row of (data ?? []) as { descricao_familia: string; total_vendido_12m: number }[]) {
+        const f = row.descricao_familia?.trim() || "Outros";
+        byFamily[f] = (byFamily[f] ?? 0) + Number(row.total_vendido_12m ?? 0);
+      }
+      const total = Object.values(byFamily).reduce((s, v) => s + v, 0);
+      return Object.entries(byFamily)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 8)
+        .map(([name, value]) => ({
+          name,
+          value,
+          pct: total > 0 ? Math.round((value / total) * 1000) / 10 : 0,
+        }));
+    },
+    staleTime: 15 * 60 * 1000,
+  });
+}
+
 function useTituloCounts() {
   return useQuery<TituloCounts>({
     queryKey: ["titulo_counts"],
@@ -294,6 +327,7 @@ export function useStrategicDashboard() {
   const concentracaoQ = useConcentracao();
   const clientesAtivosQ = useClientesAtivos();
   const tituloCountsQ = useTituloCounts();
+  const mixFamiliasQ = useMixFamilias();
 
   const isLoading =
     ebitda12mQ.isLoading ||
@@ -393,6 +427,7 @@ export function useStrategicDashboard() {
       top10Pct: 0,
     },
     tituloCounts: tituloCountsQ.data ?? { parceladas: 0, caixa30: 0, caixa90: 0 },
+    mixFamilias: mixFamiliasQ.data ?? [],
     isLoading,
     isError,
   };

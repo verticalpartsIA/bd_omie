@@ -115,7 +115,7 @@ function StrategicDashboard() {
     from: isoMonthsAgo(1),
     to: isoToday(),
   });
-  const { kpis: rawK, cockpitCEO, concentracao, tituloCounts, isLoading, isError } =
+  const { kpis: rawK, cockpitCEO, concentracao, tituloCounts, mixFamilias, isLoading, isError } =
     useStrategicDashboard();
 
   // ── Derive filtered KPIs based on selected date range ───────────────────────
@@ -624,15 +624,15 @@ function StrategicDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={categoryData}
+                    data={mixFamilias.length ? mixFamilias : categoryData}
                     dataKey="value"
                     nameKey="name"
                     innerRadius={50}
                     outerRadius={90}
                     paddingAngle={2}
                   >
-                    {categoryData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i]} />
+                    {(mixFamilias.length ? mixFamilias : categoryData).map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
                   <Legend iconType="square" wrapperStyle={{ fontSize: 11 }} />
