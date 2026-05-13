@@ -96,7 +96,10 @@ const ordersData = [
   { d: "S7", v: 82 },
 ];
 
-const COLORS = ["#F5C400", "#161616", "#808080", "#C99E00", "#E5E5E5"];
+const PIE_COLORS = [
+  "#F5C400", "#3B82F6", "#10B981", "#F97316",
+  "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16",
+];
 
 // ── Current period label ───────────────────────────────────────────────────────
 function currentPeriodLabel() {
@@ -610,42 +613,82 @@ function StrategicDashboard() {
             <div className="flex items-start justify-between border-b border-border px-5 py-4">
               <div>
                 <h4 className="text-sm font-bold">Mix por Categoria</h4>
-                <p className="text-[11px] text-muted-foreground">Receita por família de produto</p>
+                <p className="text-[11px] text-muted-foreground">Volume 12 meses por família</p>
               </div>
               <button
-                onClick={() => claudeRef.current?.ask(`Analisando o mix de receita por categoria de produto (Polias, Cabos, Painéis, Motores, Degraus): qual categoria está crescendo mais e qual está perdendo participação? Quais ações tomar para melhorar o mix?`)}
+                onClick={() => claudeRef.current?.ask(`Use a ferramenta buscar_mix_familias para analisar o mix de vendas por família de produto: qual família tem maior participação, quais têm SKUs zerados e o que fazer para melhorar o mix?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
                 <Sparkles className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="h-[280px] p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={mixFamilias.length ? mixFamilias : categoryData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={50}
-                    outerRadius={90}
-                    paddingAngle={2}
-                  >
-                    {(mixFamilias.length ? mixFamilias : categoryData).map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+            {(() => {
+              const raw = mixFamilias.length ? mixFamilias : categoryData;
+              const total = raw.reduce((s, r) => s + r.value, 0);
+              const items = raw.map((r) => ({
+                ...r,
+                pct: "pct" in r ? (r as { pct: number }).pct : total > 0 ? Math.round((r.value / total) * 1000) / 10 : 0,
+                shortName: r.name.length > 22 ? r.name.substring(0, 21) + "…" : r.name,
+              }));
+              return (
+                <div className="flex items-center gap-3 px-4 py-3" style={{ height: 262 }}>
+                  {/* Donut */}
+                  <div className="h-full w-[148px] shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={items}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius={42}
+                          outerRadius={68}
+                          paddingAngle={2}
+                          strokeWidth={0}
+                        >
+                          {items.map((_, i) => (
+                            <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number, name: string) => [
+                            value.toLocaleString("pt-BR"),
+                            name,
+                          ]}
+                          contentStyle={{
+                            borderRadius: 6,
+                            border: "1px solid hsl(var(--border))",
+                            background: "hsl(var(--card))",
+                            fontSize: 11,
+                            padding: "4px 10px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Custom legend */}
+                  <div className="flex flex-1 flex-col gap-2 overflow-hidden">
+                    {items.map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[11px]">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                          style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                        />
+                        <span
+                          className="flex-1 truncate text-foreground leading-none"
+                          title={item.name}
+                        >
+                          {item.shortName}
+                        </span>
+                        <span className="font-mono text-[10px] font-bold tabular-nums text-muted-foreground">
+                          {item.pct}%
+                        </span>
+                      </div>
                     ))}
-                  </Pie>
-                  <Legend iconType="square" wrapperStyle={{ fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: 4,
-                      border: "1px solid #E5E5E5",
-                      fontSize: 12,
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
