@@ -318,6 +318,97 @@ function useConcentracao() {
 
 // ─── Combined hook ────────────────────────────────────────────────────────────
 
+// ─── ISO week key helper ──────────────────────────────────────────────────────
+function isoWeekKey(dt: Date): string {
+  const d = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+  const day = d.getUTCDay() || 7; // Mon=1, Sun=7
+  d.setUTCDate(d.getUTCDate() + 4 - day); // nearest Thursday
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const wn = Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+  return `${d.getUTCFullYear()}-${String(wn).padStart(2, "0")}`;
+}
+
+// ─── Mix de canal (Tipo de Cliente) ──────────────────────────────────────────
+export interface MixCanalItem {
+  name: string;
+  value: number; // percentage 0-100
+}
+
+function useMixCanal() {
+  return useQuery<MixCanalItem[]>({
+    queryKey: ["mix_canal"],
+    queryFn: async () => {
+      const { data: clientes, error: e1 } = await supabase
+        .from("vw_concentracao_clientes")
+        .select("codigo_cliente_omie,receita_total")
+        .limit(1000);
+      if (e1) throw e1;
+
+      const rows = (clientes ?? []) as Array<{ codigo_cliente_omie: number; receita_total: number }>;
+      const ids = rows.map((r) => r.codigo_cliente_omie);
+      if (!ids.length) return [];
+
+      const { data: pn, error: e2 } = await supabase
+        .from("PN_Omie")
+        .select("codigo_cliente_omie,tags")
+        .in("codigo_cliente_omie", ids);
+      if (e2) throw e2;
+
+      const tagMap: Record<number, string[]> = {};
+      for (const r of (pn ?? []) as Array<{ codigo_cliente_omie: number; tags: string[] | null }>) {
+        tagMap[Number(r.codigo_cliente_omie)] = Array.isArray(r.tags) ? r.tags : [];
+      }
+
+      const canal: Record<string, number> = { "Cliente Final": 0, Revenda: 0, Outros: 0 };
+      for (const c of rows) {
+        const tags = tagMap[Number(c.codigo_cliente_omie)] ?? [];
+        const v = Number(c.receita_total ?? 0);
+        if (tags.includes("Empresa de Manutenção")) canal.Revenda += v;
+        else if (tags.includes("Cliente Final")) canal["Cliente Final"] += v;
+        else canal.Outros += v;
+      }
+
+      const total = Object.values(canal).reduce((s, v) => s + v, 0);
+      return Object.entries(canal)
+        .filter(([, v]) => v > 0)
+        .sort(([, a], [, b]) => b - a)
+        .map(([name, value]) => ({
+          name,
+          value: total > 0 ? Math.round((value / total) * 1000) / 10 : 0,
+        }));
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+// ─── Pedidos por semana ───────────────────────────────────────────────────────
+function usePedidosSemana() {
+  return useQuery<{ d: string; v: number }[]>({
+    queryKey: ["pedidos_semana"],
+    queryFn: async () => {
+      const cutoff = new Date(Date.now() - 8 * 7 * 86_400_000).toISOString();
+      const { data, error } = await supabase
+        .from("omie_orders")
+        .select("data_inclusao")
+        .gte("data_inclusao", cutoff);
+      if (error) throw error;
+
+      const weeks: Record<string, number> = {};
+      for (const row of (data ?? []) as Array<{ data_inclusao: string | null }>) {
+        if (!row.data_inclusao) continue;
+        const key = isoWeekKey(new Date(row.data_inclusao));
+        weeks[key] = (weeks[key] ?? 0) + 1;
+      }
+
+      return Object.entries(weeks)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-7)
+        .map(([, v], i) => ({ d: `S${i + 1}`, v }));
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 export function useStrategicDashboard() {
   const ebitda12mQ = useEbitda12m();
   const caixaQ = useCaixaProjetado();
@@ -328,6 +419,8 @@ export function useStrategicDashboard() {
   const clientesAtivosQ = useClientesAtivos();
   const tituloCountsQ = useTituloCounts();
   const mixFamiliasQ = useMixFamilias();
+  const mixCanalQ = useMixCanal();
+  const pedidosSemanaQ = usePedidosSemana();
 
   const isLoading =
     ebitda12mQ.isLoading ||
@@ -428,6 +521,8 @@ export function useStrategicDashboard() {
     },
     tituloCounts: tituloCountsQ.data ?? { parceladas: 0, caixa30: 0, caixa90: 0 },
     mixFamilias: mixFamiliasQ.data ?? [],
+    mixCanal: mixCanalQ.data ?? [],
+    pedidosSemana: pedidosSemanaQ.data ?? [],
     isLoading,
     isError,
   };

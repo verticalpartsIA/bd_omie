@@ -52,20 +52,7 @@ export const Route = createFileRoute("/_app/dashboard")({
   ),
 });
 
-// ── Static mock data for charts without real-time source yet ──────────────────
-const revenueData = [
-  { m: "Jan", r: 520, ly: 460 },
-  { m: "Fev", r: 610, ly: 510 },
-  { m: "Mar", r: 680, ly: 540 },
-  { m: "Abr", r: 720, ly: 580 },
-  { m: "Mai", r: 690, ly: 600 },
-  { m: "Jun", r: 760, ly: 640 },
-  { m: "Jul", r: 810, ly: 660 },
-  { m: "Ago", r: 790, ly: 700 },
-  { m: "Set", r: 860, ly: 720 },
-  { m: "Out", r: 940, ly: 780 },
-];
-
+// ── Fallback mocks used only when real data hasn't loaded yet ─────────────────
 const categoryData = [
   { name: "Polias", value: 280 },
   { name: "Cabos", value: 220 },
@@ -74,9 +61,10 @@ const categoryData = [
   { name: "Degraus", value: 130 },
 ];
 
-const channelData = [
-  { name: "Revenda", value: 62 },
-  { name: "Cliente Final", value: 38 },
+const channelDataFallback = [
+  { name: "Cliente Final", value: 63 },
+  { name: "Revenda", value: 33 },
+  { name: "Outros", value: 4 },
 ];
 
 // helper – keep in sync with PeriodSelector defaults
@@ -86,14 +74,9 @@ function isoMonthsAgo(n: number) {
   return d.toISOString().split("T")[0];
 }
 
-const ordersData = [
-  { d: "S1", v: 38 },
-  { d: "S2", v: 52 },
-  { d: "S3", v: 47 },
-  { d: "S4", v: 64 },
-  { d: "S5", v: 58 },
-  { d: "S6", v: 71 },
-  { d: "S7", v: 82 },
+const ordersDataFallback = [
+  { d: "S1", v: 38 }, { d: "S2", v: 52 }, { d: "S3", v: 47 },
+  { d: "S4", v: 64 }, { d: "S5", v: 58 }, { d: "S6", v: 71 }, { d: "S7", v: 82 },
 ];
 
 const PIE_COLORS = [
@@ -118,8 +101,11 @@ function StrategicDashboard() {
     from: isoMonthsAgo(1),
     to: isoToday(),
   });
-  const { kpis: rawK, cockpitCEO, concentracao, tituloCounts, mixFamilias, isLoading, isError } =
-    useStrategicDashboard();
+  const {
+    kpis: rawK, cockpitCEO, concentracao, tituloCounts,
+    mixFamilias, mixCanal, pedidosSemana,
+    isLoading, isError,
+  } = useStrategicDashboard();
 
   // ── Derive filtered KPIs based on selected date range ───────────────────────
   const k = (() => {
@@ -172,6 +158,29 @@ function StrategicDashboard() {
       : 0;
 
   const periodLabel = currentPeriodLabel();
+
+  // ── Derived chart data from real ebitda12m ────────────────────────────────
+  const revenueChartData = rawK.ebitda12m.map((m) => ({
+    m: m.mes,
+    r: Math.round(m.receita / 1000),  // in R$ thousands
+    e: Math.round(m.ebitda / 1000),
+  }));
+
+  // Semester-over-semester growth (H2 vs H1 of 12-month window, excluding partial last month)
+  const semGrowthPct = (() => {
+    const complete = rawK.ebitda12m.filter((m) => m.receita > 0).slice(0, -1);
+    if (complete.length < 4) return null;
+    const mid = Math.floor(complete.length / 2);
+    const h1 = complete.slice(0, mid).reduce((s, m) => s + m.receita, 0);
+    const h2 = complete.slice(mid).reduce((s, m) => s + m.receita, 0);
+    return h1 > 0 ? Math.round(((h2 - h1) / h1) * 100) : null;
+  })();
+
+  // Real channel data (Tipo de Cliente) — fallback until hook loads
+  const channelData = mixCanal.length ? mixCanal : channelDataFallback;
+
+  // Real orders per week — fallback until hook loads
+  const ordersData = pedidosSemana.length ? pedidosSemana : ordersDataFallback;
 
   if (isLoading) {
     return (
@@ -527,83 +536,56 @@ function StrategicDashboard() {
           <div className="rounded-md border border-border bg-card shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <div>
-                <h4 className="text-sm font-bold">Evolução de Receita</h4>
+                <h4 className="text-sm font-bold">Receita Mensal · Últimos 12 meses</h4>
                 <p className="text-[11px] text-muted-foreground">
-                  2025 vs 2024 · em milhares R$
+                  Receita em R$ mil · dados reais Omie
                 </p>
               </div>
               <div className="flex items-center gap-3">
-              <button
-                onClick={() => claudeRef.current?.ask(`Comparando a evolução de receita de 2025 vs 2024 mês a mês: em quais meses o crescimento foi maior? Qual o crescimento acumulado e o que pode explicar as variações?`)}
-                title="Perguntar ao Analista IA"
-                className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-              </button>
-              <div className="flex items-center gap-3 text-[11px] font-semibold text-foreground/70">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
-                  2025
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-neutral-400" />
-                  2024
-                </span>
-              </div>
+                <button
+                  onClick={() => claudeRef.current?.ask(`Use a ferramenta buscar_evolucao_receita para analisar a tendência de receita mensal nos últimos 12 meses: em quais meses a receita foi maior? Há sazonalidade? Qual a tendência para os próximos meses?`)}
+                  title="Perguntar ao Analista IA"
+                  className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                </button>
+                <div className="flex items-center gap-3 text-[11px] font-semibold text-foreground/70">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
+                    Receita (R$mil)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" />
+                    EBITDA (R$mil)
+                  </span>
+                </div>
               </div>
             </div>
             <div className="h-[280px] p-4">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
+                <AreaChart data={revenueChartData}>
                   <defs>
                     <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#F5C400" stopOpacity={0.5} />
-                      <stop
-                        offset="100%"
-                        stopColor="#F5C400"
-                        stopOpacity={0}
-                      />
+                      <stop offset="0%" stopColor="#F5C400" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#F5C400" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10B981" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#E5E5E5"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="m"
-                    stroke="#808080"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#808080"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" vertical={false} />
+                  <XAxis dataKey="m" stroke="#808080" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#808080" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v: number) => `${v}`} />
                   <Tooltip
-                    contentStyle={{
-                      borderRadius: 4,
-                      border: "1px solid #E5E5E5",
-                      fontSize: 12,
-                    }}
+                    formatter={(v: number, name: string) => [
+                      `R$ ${v.toLocaleString("pt-BR")} mil`,
+                      name === "r" ? "Receita" : "EBITDA",
+                    ]}
+                    contentStyle={{ borderRadius: 4, border: "1px solid #E5E5E5", fontSize: 12 }}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="ly"
-                    stroke="#A0A0A0"
-                    strokeDasharray="4 4"
-                    fill="transparent"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="r"
-                    stroke="#F5C400"
-                    strokeWidth={2.5}
-                    fill="url(#g1)"
-                  />
+                  <Area type="monotone" dataKey="e" name="e" stroke="#10B981" strokeWidth={1.5} strokeDasharray="4 3" fill="url(#g2)" />
+                  <Area type="monotone" dataKey="r" name="r" stroke="#F5C400" strokeWidth={2.5} fill="url(#g1)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -697,7 +679,9 @@ function StrategicDashboard() {
             <div className="flex items-start justify-between border-b border-border px-5 py-4">
               <div>
                 <h4 className="text-sm font-bold">Pedidos por Semana</h4>
-                <p className="text-[11px] text-muted-foreground">Últimas 7 semanas</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Últimas 7 semanas · {pedidosSemana.reduce((s, w) => s + w.v, 0) || ordersDataFallback.reduce((s, w) => s + w.v, 0)} pedidos
+                </p>
               </div>
               <button
                 onClick={() => claudeRef.current?.ask(`Analisando o volume de pedidos por semana nas últimas 7 semanas: há uma tendência de aceleração ou queda? Quais semanas foram atípicas e o que pode ter causado variações?`)}
@@ -745,99 +729,86 @@ function StrategicDashboard() {
             <div className="flex items-start justify-between border-b border-border px-5 py-4">
               <div>
                 <h4 className="text-sm font-bold">Tipo de Cliente</h4>
-                <p className="text-[11px] text-muted-foreground">Revenda vs Cliente Final</p>
+                <p className="text-[11px] text-muted-foreground">Revenda vs Cliente Final · por receita</p>
               </div>
               <button
-                onClick={() => claudeRef.current?.ask(`A VerticalParts vende para dois segmentos: "Revenda" (empresas de manutenção que revendem/usam as peças) e "Cliente Final" (usuários diretos). O mix atual é ~62% Revenda e 38% Cliente Final. Qual o impacto dessa distribuição na margem e no risco do negócio?`)}
+                onClick={() => claudeRef.current?.ask(`A VerticalParts vende para "Empresa de Manutenção" (Revenda) e "Cliente Final". Com base nos dados reais de receita por tipo de cliente: qual segmento tem maior ticket médio e qual estratégia adotar para crescer em cada canal?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
                 <Sparkles className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="h-[220px] p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={channelData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={45}
-                    outerRadius={80}
-                  >
-                    <Cell fill="#F5C400" />
-                    <Cell fill="#161616" />
-                  </Pie>
-                  <Legend iconType="square" wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex items-center gap-3 px-4 py-3" style={{ height: 220 }}>
+              <div className="h-full w-[120px] shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={channelData} dataKey="value" nameKey="name" innerRadius={35} outerRadius={55} paddingAngle={2} strokeWidth={0}>
+                      {channelData.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(v: number, name: string) => [`${v}%`, name]}
+                      contentStyle={{ borderRadius: 6, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: 11 }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-1 flex-col gap-2.5">
+                {channelData.map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[11px]">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="flex-1 text-foreground leading-none">{item.name}</span>
+                    <span className="font-mono text-[10px] font-bold tabular-nums text-muted-foreground">{item.value}%</span>
+                  </div>
+                ))}
+                <p className="mt-1 text-[9px] text-muted-foreground leading-tight">
+                  Fonte: tags PN_Omie · receita 12m
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="rounded-md border border-border bg-card shadow-sm">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <div>
-                <h4 className="text-sm font-bold">Crescimento YoY</h4>
+                <h4 className="text-sm font-bold">Tendência de Crescimento · 12M</h4>
                 <p className="text-[11px] text-muted-foreground">
-                  Receita acumulada
+                  Receita em R$ mil · semestral
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => claudeRef.current?.ask(`O crescimento de receita YoY (ano sobre ano) está em +18%. Quais os principais drivers desse crescimento e como sustentar ou acelerar essa taxa nos próximos meses?`)}
+                  onClick={() => claudeRef.current?.ask(`Use a ferramenta buscar_evolucao_receita para analisar a tendência de crescimento de receita: qual foi o crescimento no segundo semestre vs primeiro semestre dos últimos 12 meses? Quais fatores explicam a variação e como sustentar o crescimento?`)}
                   title="Perguntar ao Analista IA"
                   className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                 </button>
-              <span className="inline-flex items-center gap-1 rounded bg-success/15 px-2 py-1 text-xs font-bold text-success">
-                <TrendingUp className="h-3 w-3" /> +18%
-              </span>
+                {semGrowthPct !== null && (
+                  <span className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-bold ${semGrowthPct >= 0 ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}`}>
+                    <TrendingUp className="h-3 w-3" />
+                    {semGrowthPct >= 0 ? "+" : ""}{semGrowthPct}%
+                  </span>
+                )}
               </div>
             </div>
             <div className="h-[220px] p-4">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#E5E5E5"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="m"
-                    stroke="#808080"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#808080"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
+                <LineChart data={revenueChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" vertical={false} />
+                  <XAxis dataKey="m" stroke="#808080" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#808080" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip
-                    contentStyle={{
-                      borderRadius: 4,
-                      border: "1px solid #E5E5E5",
-                      fontSize: 12,
-                    }}
+                    formatter={(v: number, name: string) => [
+                      `R$ ${v.toLocaleString("pt-BR")} mil`,
+                      name === "r" ? "Receita" : "EBITDA",
+                    ]}
+                    contentStyle={{ borderRadius: 4, border: "1px solid #E5E5E5", fontSize: 12 }}
                   />
-                  <Line
-                    type="monotone"
-                    dataKey="r"
-                    stroke="#F5C400"
-                    strokeWidth={2.5}
-                    dot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="ly"
-                    stroke="#808080"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 4"
-                    dot={false}
-                  />
+                  <Line type="monotone" dataKey="r" name="r" stroke="#F5C400" strokeWidth={2.5} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="e" name="e" stroke="#10B981" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
