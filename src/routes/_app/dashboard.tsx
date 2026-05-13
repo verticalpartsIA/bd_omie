@@ -35,6 +35,7 @@ import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { ExportMenu } from "@/components/app/ExportMenu";
 import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
+import { ClaudeChat } from "@/components/app/ClaudeChat";
 import { formatBRL } from "@/data/executive-mock";
 import { useStrategicDashboard } from "@/hooks/useStrategicDashboard";
 import { useSidebarToggle } from "../_app";
@@ -670,6 +671,7 @@ function StrategicDashboard() {
           </div>
         </div>
       </main>
+      <ClaudeChat kpis={k} alertas={cockpitCEO} concentracao={concentracao} />
     </>
   );
 }
