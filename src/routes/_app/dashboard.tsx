@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Area,
@@ -35,7 +36,7 @@ import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { ExportMenu } from "@/components/app/ExportMenu";
 import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
-import { ClaudeChat } from "@/components/app/ClaudeChat";
+import { ClaudeChat, type ClaudeChatHandle } from "@/components/app/ClaudeChat";
 import { formatBRL } from "@/data/executive-mock";
 import { useStrategicDashboard } from "@/hooks/useStrategicDashboard";
 import { useSidebarToggle } from "../_app";
@@ -100,6 +101,7 @@ function currentPeriodLabel() {
 
 function StrategicDashboard() {
   const toggle = useSidebarToggle();
+  const claudeRef = useRef<ClaudeChatHandle>(null);
   const { kpis: k, cockpitCEO, concentracao, isLoading, isError } =
     useStrategicDashboard();
 
@@ -185,35 +187,41 @@ function StrategicDashboard() {
             delta={k.ebitdaDelta}
             hint={`${k.ebitdaPct}% margem`}
             icon={Activity}
+            onAskClaude={() => claudeRef.current?.ask(`O EBITDA está em ${formatBRL(k.ebitda)} com margem de ${k.ebitdaPct}% e variação MoM de ${k.ebitdaDelta > 0 ? "+" : ""}${k.ebitdaDelta}%. O que está impactando e como melhorar?`)}
           />
           <KpiCard
             label="Resultado Líquido"
             value={formatBRL(k.resultadoLiquido)}
             hint={`${k.margemLiquida}% margem`}
             icon={Percent}
+            onAskClaude={() => claudeRef.current?.ask(`O resultado líquido é ${formatBRL(k.resultadoLiquido)} com margem de ${k.margemLiquida}%. O que está comprimindo a margem líquida e quais ações tomar?`)}
           />
           <KpiCard
             label="Receita Recorrente"
             value={formatBRL(k.receitaRecorrente)}
             hint="Contratos manutenção"
             icon={Repeat}
+            onAskClaude={() => claudeRef.current?.ask(`A receita recorrente de contratos está em ${formatBRL(k.receitaRecorrente)}. Como está a saúde da base de contratos e o que fazer para aumentar a recorrência?`)}
           />
           <KpiCard
             label="Receita Não Recorrente"
             value={formatBRL(k.receitaNaoRecorrente)}
             hint="Venda avulsa"
             icon={DollarSign}
+            onAskClaude={() => claudeRef.current?.ask(`A receita não recorrente (avulsa) está em ${formatBRL(k.receitaNaoRecorrente)}. Qual a relação entre receita recorrente e avulsa e como converter mais clientes para contratos?`)}
           />
           <KpiCard
             label="Caixa D+30"
             value={formatBRL(k.caixa30)}
             icon={Wallet}
             accent
+            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+30 está em ${formatBRL(k.caixa30)}${k.caixa30 < 0 ? " (NEGATIVO)" : ""}. Quais são os principais riscos de liquidez nos próximos 30 dias e o que fazer?`)}
           />
           <KpiCard
             label="Caixa D+90"
             value={formatBRL(k.caixa90)}
             icon={Wallet}
+            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+90 está em ${formatBRL(k.caixa90)}${k.caixa90 < 0 ? " (NEGATIVO)" : ""}. Quais são os riscos de caixa no horizonte de 90 dias e quais ações priorizar?`)}
           />
         </div>
 
@@ -294,24 +302,28 @@ function StrategicDashboard() {
             value={formatBRL(k.receita)}
             hint="Receita bruta acumulada"
             icon={DollarSign}
+            onAskClaude={() => claudeRef.current?.ask(`A receita do mês está em ${formatBRL(k.receita)}. Como está o ritmo de vendas em relação à meta e o que fazer para acelerar o fechamento?`)}
           />
           <KpiCard
             label="Margem Bruta"
             value={`${k.margemBruta}%`}
             hint="Após deduções e CPV"
             icon={Percent}
+            onAskClaude={() => claudeRef.current?.ask(`A margem bruta está em ${k.margemBruta}%. O que está impactando o custo dos produtos vendidos e como melhorar essa margem?`)}
           />
           <KpiCard
             label="Clientes ativos"
             value="—"
             hint="Manutenção + cliente final"
             icon={Users}
+            onAskClaude={() => claudeRef.current?.ask(`Quais são os top clientes por receita nos últimos 12 meses? Mostre o ranking e analise a concentração de receita.`)}
           />
           <KpiCard
             label="SKUs em estoque"
             value="4.140"
             hint="Produtos VP ativos"
             icon={Package}
+            onAskClaude={() => claudeRef.current?.ask(`Quais produtos estão com estoque zerado e têm demanda ativa? Liste os mais críticos para reposição imediata.`)}
           />
         </div>
 
@@ -671,7 +683,7 @@ function StrategicDashboard() {
           </div>
         </div>
       </main>
-      <ClaudeChat kpis={k} alertas={cockpitCEO} concentracao={concentracao} />
+      <ClaudeChat ref={claudeRef} kpis={k} alertas={cockpitCEO} concentracao={concentracao} />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ArrowDownRight, ArrowUpRight, type LucideIcon } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Sparkles, type LucideIcon } from "lucide-react";
 
 interface KpiCardProps {
   label: string;
@@ -8,14 +8,15 @@ interface KpiCardProps {
   hint?: string;
   icon: LucideIcon;
   accent?: boolean;
+  onAskClaude?: () => void;
 }
 
-export function KpiCard({ label, value, delta, hint, icon: Icon, accent }: KpiCardProps) {
+export function KpiCard({ label, value, delta, hint, icon: Icon, accent, onAskClaude }: KpiCardProps) {
   const positive = (delta ?? 0) >= 0;
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-3 overflow-hidden rounded-md border border-border bg-card p-5 shadow-sm",
+        "group/kpi relative flex flex-col gap-3 overflow-hidden rounded-md border border-border bg-card p-5 shadow-sm",
         accent && "border-l-4 border-l-primary",
       )}
     >
@@ -23,8 +24,19 @@ export function KpiCard({ label, value, delta, hint, icon: Icon, accent }: KpiCa
         <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
           {label}
         </div>
-        <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/15 text-primary">
-          <Icon className="h-4 w-4" />
+        <div className="flex items-center gap-1.5">
+          {onAskClaude && (
+            <button
+              onClick={onAskClaude}
+              title="Perguntar ao Analista IA"
+              className="flex h-6 w-6 items-center justify-center rounded opacity-0 transition-opacity group-hover/kpi:opacity-100 hover:bg-primary/15 text-primary"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/15 text-primary">
+            <Icon className="h-4 w-4" />
+          </div>
         </div>
       </div>
       <div className="font-mono text-3xl font-extrabold tracking-tight">{value}</div>

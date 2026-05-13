@@ -1,8 +1,12 @@
-import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
+import { MessageCircle, X, Send, Loader2, Sparkles, Copy, Check } from "lucide-react";
 import type { StrategicKpis, ConcentracaoData } from "@/hooks/useStrategicDashboard";
 import type { AlertItem } from "@/components/app/AlertasRecomendacoes";
 import { formatBRL } from "@/data/executive-mock";
+
+export interface ClaudeChatHandle {
+  ask: (question: string) => void;
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -100,13 +104,32 @@ ${trend}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function ClaudeChat({ kpis, alertas, concentracao }: Props) {
+export const ClaudeChat = forwardRef<ClaudeChatHandle, Props>(function ClaudeChat(
+  { kpis, alertas, concentracao }: Props,
+  ref,
+) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    ask(question: string) {
+      setOpen(true);
+      // defer so the panel is rendered before sending
+      setTimeout(() => send(question), 0);
+    },
+  }));
+
+  const copyMessage = useCallback((text: string, idx: number) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    });
+  }, []);
 
   const suggestions = buildSuggestions(kpis, alertas);
 
@@ -226,15 +249,30 @@ export function ClaudeChat({ kpis, alertas, concentracao }: Props) {
                 key={i}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div
-                  className={`max-w-[88%] rounded-xl px-3 py-2 text-[12px] leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "border border-border bg-muted/60 text-foreground"
-                  }`}
-                >
-                  {msg.content || (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <div className={`group relative max-w-[88%] ${msg.role === "assistant" ? "w-full" : ""}`}>
+                  <div
+                    className={`rounded-xl px-3 py-2 text-[12px] leading-relaxed ${
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border bg-muted/60 text-foreground"
+                    }`}
+                  >
+                    {msg.content || (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    )}
+                  </div>
+                  {msg.role === "assistant" && msg.content && (
+                    <button
+                      onClick={() => copyMessage(msg.content, i)}
+                      className="absolute -bottom-5 right-0 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+                      title="Copiar resposta"
+                    >
+                      {copiedIdx === i ? (
+                        <><Check className="h-3 w-3 text-green-500" /><span className="text-green-500">Copiado</span></>
+                      ) : (
+                        <><Copy className="h-3 w-3" /><span>Copiar</span></>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
@@ -284,4 +322,4 @@ export function ClaudeChat({ kpis, alertas, concentracao }: Props) {
       )}
     </>
   );
-}
+});
