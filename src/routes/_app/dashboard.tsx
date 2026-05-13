@@ -38,6 +38,7 @@ import { RoleGuard } from "@/components/app/RoleGuard";
 import { ExportMenu } from "@/components/app/ExportMenu";
 import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
 import { ClaudeChat, type ClaudeChatHandle } from "@/components/app/ClaudeChat";
+import { PeriodSelector, type DateRange } from "@/components/app/PeriodSelector";
 import { formatBRL } from "@/data/executive-mock";
 import { useStrategicDashboard } from "@/hooks/useStrategicDashboard";
 import { useSidebarToggle } from "../_app";
@@ -78,12 +79,12 @@ const channelData = [
   { name: "Cliente Final", value: 38 },
 ];
 
-type Period = "30d" | "90d" | "12m";
-const PERIOD_LABELS: Record<Period, string> = {
-  "30d": "Últimos 30 dias",
-  "90d": "Últimos 90 dias",
-  "12m": "Últimos 12 meses",
-};
+// helper – keep in sync with PeriodSelector defaults
+function isoToday() { return new Date().toISOString().split("T")[0]; }
+function isoMonthsAgo(n: number) {
+  const d = new Date(); d.setMonth(d.getMonth() - n); d.setDate(1);
+  return d.toISOString().split("T")[0];
+}
 
 const ordersData = [
   { d: "S1", v: 38 },
@@ -110,45 +111,55 @@ function currentPeriodLabel() {
 function StrategicDashboard() {
   const toggle = useSidebarToggle();
   const claudeRef = useRef<ClaudeChatHandle>(null);
-  const [period, setPeriod] = useState<Period>("30d");
-  const { kpis: rawK, cockpitCEO, concentracao, isLoading, isError } =
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: isoMonthsAgo(1),
+    to: isoToday(),
+  });
+  const { kpis: rawK, cockpitCEO, concentracao, tituloCounts, isLoading, isError } =
     useStrategicDashboard();
 
-  // ── Derive filtered KPIs based on selected period ───────────────────────────
+  // ── Derive filtered KPIs based on selected date range ───────────────────────
   const k = (() => {
     const months = rawK.ebitda12m;
     if (!months.length) return rawK;
-    // Pick window
-    let slice: typeof months;
-    if (period === "30d") {
-      const m = months.length >= 2 ? months[months.length - 2] : months[months.length - 1];
-      slice = m ? [m] : [months[months.length - 1]];
-    } else if (period === "90d") {
-      slice = months.slice(-4, -1); // last 3 complete months
-    } else {
-      slice = months.slice(0, -1); // all complete months (12m)
+
+    // Filter months whose mes_dt (YYYY-MM) falls within the selected range
+    const fromYM = dateRange.from.substring(0, 7);
+    const toYM   = dateRange.to.substring(0, 7);
+    let slice = months.filter((m) => m.mes_dt >= fromYM && m.mes_dt <= toYM);
+
+    // Exclude the most recent (possibly partial) month unless explicitly chosen
+    if (slice.length > 1 && slice[slice.length - 1].mes_dt === months[months.length - 1].mes_dt) {
+      slice = slice.slice(0, -1);
     }
-    if (!slice.length) return rawK;
+    if (!slice.length) {
+      // Fallback to last complete month
+      slice = [months.length >= 2 ? months[months.length - 2] : months[months.length - 1]].filter(Boolean) as typeof months;
+    }
+
+    const n = slice.length;
     const totalReceita = slice.reduce((s, m) => s + m.receita, 0);
     const totalEbitda  = slice.reduce((s, m) => s + m.ebitda, 0);
     const totalMargem  = slice.reduce((s, m) => s + m.margem, 0);
-    const avgReceita   = totalReceita / slice.length;
-    const avgEbitda    = totalEbitda / slice.length;
+    const avgReceita   = totalReceita / n;
+    const avgEbitda    = totalEbitda  / n;
     const ebitdaPct    = avgReceita > 0 ? Math.round((avgEbitda / avgReceita) * 1000) / 10 : 0;
-    const margemBruta  = avgReceita > 0 ? Math.round((totalMargem / slice.length / avgReceita) * 1000) / 10 : 0;
+    const margemBruta  = avgReceita > 0 ? Math.round((totalMargem / n / avgReceita) * 1000) / 10 : 0;
     const resLiquido   = Math.round(avgEbitda * 0.87);
     const margemLiqPct = avgReceita > 0 ? Math.round((resLiquido / avgReceita) * 1000) / 10 : 0;
-    const prevEbitda   = slice.length > 1 ? slice[0].ebitda : (rawK.ebitda12m[rawK.ebitda12m.length - 3]?.ebitda ?? 0);
+    const prevEbitda   = slice.length > 1 ? slice[0].ebitda : (months[months.length - 3]?.ebitda ?? 0);
     const ebitdaDelta  = prevEbitda > 0 ? Math.round(((avgEbitda - prevEbitda) / prevEbitda) * 1000) / 10 : 0;
+    // Multi-month: show totals; single month: show monthly values
+    const isMulti = n > 1;
     return {
       ...rawK,
-      receita: period === "12m" ? totalReceita : avgReceita,
-      ebitda: period === "12m" ? totalEbitda : avgEbitda,
+      receita:          isMulti ? totalReceita : avgReceita,
+      ebitda:           isMulti ? totalEbitda  : avgEbitda,
       ebitdaPct,
       ebitdaDelta,
       margemBruta,
-      resultadoLiquido: period === "12m" ? Math.round(totalEbitda * 0.87) : resLiquido,
-      margemLiquida: margemLiqPct,
+      resultadoLiquido: isMulti ? Math.round(totalEbitda * 0.87) : resLiquido,
+      margemLiquida:    margemLiqPct,
     };
   })();
 
@@ -213,19 +224,7 @@ function StrategicDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {(["30d", "90d", "12m"] as Period[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`rounded border px-3 py-2 text-xs font-semibold transition-colors ${
-                  period === p
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card text-foreground/70 hover:border-neutral-400"
-                }`}
-              >
-                {PERIOD_LABELS[p]}
-              </button>
-            ))}
+            <PeriodSelector value={dateRange} onChange={setDateRange} />
             <ExportMenu
               filename="strategic-dashboard"
               rows={
@@ -235,8 +234,8 @@ function StrategicDashboard() {
           </div>
         </div>
 
-        {/* Camada executiva — EBITDA / Líquido / Recorrente / Caixa */}
-        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {/* Camada executiva — EBITDA / Líquido / Parceladas / Caixa */}
+        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           <KpiCard
             accent
             label="EBITDA"
@@ -256,29 +255,25 @@ function StrategicDashboard() {
           <KpiCard
             label="Vendas Parceladas"
             value={formatBRL(k.receitaRecorrente)}
-            hint="Total a receber em parcelas"
+            hint="Saldo de parcelas a receber"
             icon={Repeat}
-            onAskClaude={() => claudeRef.current?.ask(`As vendas parceladas totalizam ${formatBRL(k.receitaRecorrente)} em parcelas a receber. Quais clientes têm mais parcelas pendentes e qual o risco de inadimplência nessa carteira?`)}
-          />
-          <KpiCard
-            label="Vendas à Vista"
-            value={formatBRL(k.receitaNaoRecorrente)}
-            hint="Compras pagas de uma vez"
-            icon={DollarSign}
-            onAskClaude={() => claudeRef.current?.ask(`As vendas à vista somam ${formatBRL(k.receitaNaoRecorrente)}. Como está o volume de vendas à vista vs. parceladas e qual a tendência desse mix?`)}
+            badge={tituloCounts.parceladas || undefined}
+            onAskClaude={() => claudeRef.current?.ask(`As vendas parceladas totalizam ${formatBRL(k.receitaRecorrente)} em ${tituloCounts.parceladas} clientes. Quais clientes têm mais parcelas pendentes e qual o risco de inadimplência nessa carteira?`)}
           />
           <KpiCard
             label="Caixa D+30"
             value={formatBRL(k.caixa30)}
             icon={Wallet}
             accent
-            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+30 está em ${formatBRL(k.caixa30)}${k.caixa30 < 0 ? " (NEGATIVO)" : ""}. Quais são os principais riscos de liquidez nos próximos 30 dias e o que fazer?`)}
+            badge={tituloCounts.caixa30 || undefined}
+            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+30 está em ${formatBRL(k.caixa30)}${k.caixa30 < 0 ? " (NEGATIVO)" : ""} com ${tituloCounts.caixa30} títulos vencendo. Quais são os principais riscos de liquidez nos próximos 30 dias e o que fazer?`)}
           />
           <KpiCard
             label="Caixa D+90"
             value={formatBRL(k.caixa90)}
             icon={Wallet}
-            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+90 está em ${formatBRL(k.caixa90)}${k.caixa90 < 0 ? " (NEGATIVO)" : ""}. Quais são os riscos de caixa no horizonte de 90 dias e quais ações priorizar?`)}
+            badge={tituloCounts.caixa90 || undefined}
+            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+90 está em ${formatBRL(k.caixa90)}${k.caixa90 < 0 ? " (NEGATIVO)" : ""} com ${tituloCounts.caixa90} títulos no horizonte. Quais são os riscos de caixa e quais ações priorizar?`)}
           />
         </div>
 

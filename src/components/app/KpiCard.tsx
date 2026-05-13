@@ -9,9 +9,11 @@ interface KpiCardProps {
   icon: LucideIcon;
   accent?: boolean;
   onAskClaude?: () => void;
+  /** Small transaction / document count shown as a chip above the icon */
+  badge?: number;
 }
 
-export function KpiCard({ label, value, delta, hint, icon: Icon, accent, onAskClaude }: KpiCardProps) {
+export function KpiCard({ label, value, delta, hint, icon: Icon, accent, onAskClaude, badge }: KpiCardProps) {
   const positive = (delta ?? 0) >= 0;
   return (
     <div
@@ -34,8 +36,15 @@ export function KpiCard({ label, value, delta, hint, icon: Icon, accent, onAskCl
               <Sparkles className="h-3.5 w-3.5" />
             </button>
           )}
-          <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/15 text-primary">
-            <Icon className="h-4 w-4" />
+          <div className="flex flex-col items-center gap-1">
+            {badge !== undefined && badge > 0 && (
+              <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold leading-none text-muted-foreground">
+                {badge.toLocaleString("pt-BR")} títulos
+              </span>
+            )}
+            <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/15 text-primary">
+              <Icon className="h-4 w-4" />
+            </div>
           </div>
         </div>
       </div>

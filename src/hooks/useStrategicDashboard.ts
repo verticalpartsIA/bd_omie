@@ -60,6 +60,7 @@ interface RawConcentracao {
 
 export interface Ebitda12mItem {
   mes: string;
+  mes_dt: string; // YYYY-MM for date-range filtering
   receita: number;
   margem: number;
   ebitda: number;
@@ -96,6 +97,12 @@ export interface StrategicKpis {
   clientesAtivos: number;
 }
 
+export interface TituloCounts {
+  parceladas: number;  // installment sale titles
+  caixa30: number;     // receivable + payable docs due ≤ D+30
+  caixa90: number;     // receivable + payable docs due ≤ D+90
+}
+
 export interface ConcentracaoData {
   top5: ConcentracaoItem[];
   top10: ConcentracaoItem[];
@@ -116,6 +123,7 @@ function useEbitda12m() {
       if (error) throw error;
       return (data as RawEbitda12m[]).map((r) => ({
         mes: r.mes,
+        mes_dt: r.mes_dt.substring(0, 7), // YYYY-MM
         receita: Number(r.receita),
         margem: Number(r.margem),
         ebitda: Number(r.ebitda),
@@ -195,6 +203,45 @@ function useReceitaRecorrente() {
   });
 }
 
+function useTituloCounts() {
+  return useQuery<TituloCounts>({
+    queryKey: ["titulo_counts"],
+    queryFn: async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const d30 = new Date(Date.now() + 30 * 86_400_000).toISOString().split("T")[0];
+      const d90 = new Date(Date.now() + 90 * 86_400_000).toISOString().split("T")[0];
+
+      // Count installment clients (best we can do via anon key)
+      const parceladasQ = await supabase
+        .from("vw_receita_recorrente")
+        .select("*", { count: "exact", head: true });
+
+      // Try CR_Omie + CP_Omie counts — may be blocked by RLS (graceful fallback)
+      const [cr30, cp30, cr90, cp90] = await Promise.all([
+        supabase.from("CR_Omie").select("*", { count: "exact", head: true })
+          .gte("data_vencimento", today).lte("data_vencimento", d30)
+          .in("status_titulo", ["A VENCER", "ATRASADO"]),
+        supabase.from("CP_Omie").select("*", { count: "exact", head: true })
+          .gte("data_vencimento", today).lte("data_vencimento", d30)
+          .eq("status_titulo", "A VENCER"),
+        supabase.from("CR_Omie").select("*", { count: "exact", head: true })
+          .gte("data_vencimento", today).lte("data_vencimento", d90)
+          .in("status_titulo", ["A VENCER", "ATRASADO"]),
+        supabase.from("CP_Omie").select("*", { count: "exact", head: true })
+          .gte("data_vencimento", today).lte("data_vencimento", d90)
+          .eq("status_titulo", "A VENCER"),
+      ]);
+
+      return {
+        parceladas: parceladasQ.count ?? 0,
+        caixa30: (cr30.count ?? 0) + (cp30.count ?? 0),
+        caixa90: (cr90.count ?? 0) + (cp90.count ?? 0),
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 function useClientesAtivos() {
   return useQuery<number>({
     queryKey: ["clientes_ativos_count"],
@@ -246,6 +293,7 @@ export function useStrategicDashboard() {
   const recorrenteQ = useReceitaRecorrente();
   const concentracaoQ = useConcentracao();
   const clientesAtivosQ = useClientesAtivos();
+  const tituloCountsQ = useTituloCounts();
 
   const isLoading =
     ebitda12mQ.isLoading ||
@@ -344,6 +392,7 @@ export function useStrategicDashboard() {
       top5Pct: 0,
       top10Pct: 0,
     },
+    tituloCounts: tituloCountsQ.data ?? { parceladas: 0, caixa30: 0, caixa90: 0 },
     isLoading,
     isError,
   };
