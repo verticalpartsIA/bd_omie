@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiClaudeRouteImport } from './routes/api/claude'
 import { Route as AppVendedoresRouteImport } from './routes/_app/vendedores'
 import { Route as AppSegmentosRouteImport } from './routes/_app/segmentos'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
@@ -59,6 +60,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClaudeRoute = ApiClaudeRouteImport.update({
+  id: '/api/claude',
+  path: '/api/claude',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppVendedoresRoute = AppVendedoresRouteImport.update({
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof AppRelatoriosRoute
   '/segmentos': typeof AppSegmentosRoute
   '/vendedores': typeof AppVendedoresRoute
+  '/api/claude': typeof ApiClaudeRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/clientes/': typeof AppClientesIndexRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/relatorios': typeof AppRelatoriosRoute
   '/segmentos': typeof AppSegmentosRoute
   '/vendedores': typeof AppVendedoresRoute
+  '/api/claude': typeof ApiClaudeRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/clientes': typeof AppClientesIndexRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/segmentos': typeof AppSegmentosRoute
   '/_app/vendedores': typeof AppVendedoresRoute
+  '/api/claude': typeof ApiClaudeRoute
   '/_app/clientes/$id': typeof AppClientesIdRoute
   '/_app/produtos/$id': typeof AppProdutosIdRoute
   '/_app/clientes/': typeof AppClientesIndexRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/segmentos'
     | '/vendedores'
+    | '/api/claude'
     | '/clientes/$id'
     | '/produtos/$id'
     | '/clientes/'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/segmentos'
     | '/vendedores'
+    | '/api/claude'
     | '/clientes/$id'
     | '/produtos/$id'
     | '/clientes'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/_app/relatorios'
     | '/_app/segmentos'
     | '/_app/vendedores'
+    | '/api/claude'
     | '/_app/clientes/$id'
     | '/_app/produtos/$id'
     | '/_app/clientes/'
@@ -293,6 +305,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiClaudeRoute: typeof ApiClaudeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/claude': {
+      id: '/api/claude'
+      path: '/api/claude'
+      fullPath: '/api/claude'
+      preLoaderRoute: typeof ApiClaudeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/vendedores': {
@@ -501,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiClaudeRoute: ApiClaudeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
