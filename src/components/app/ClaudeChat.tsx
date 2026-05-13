@@ -249,31 +249,31 @@ export const ClaudeChat = forwardRef<ClaudeChatHandle, Props>(function ClaudeCha
                 key={i}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div className={`group relative max-w-[88%] ${msg.role === "assistant" ? "w-full" : ""}`}>
+                <div className={`max-w-[88%] ${msg.role === "assistant" ? "w-full" : ""}`}>
                   <div
-                    className={`rounded-xl px-3 py-2 text-[12px] leading-relaxed ${
+                    className={`group relative rounded-xl px-3 py-2 text-[12px] leading-relaxed ${
                       msg.role === "user"
                         ? "bg-primary text-primary-foreground"
                         : "border border-border bg-muted/60 text-foreground"
                     }`}
                   >
+                    {msg.role === "assistant" && msg.content && (
+                      <button
+                        onClick={() => copyMessage(msg.content, i)}
+                        className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:text-foreground"
+                        title="Copiar resposta"
+                      >
+                        {copiedIdx === i ? (
+                          <><Check className="h-3 w-3 text-green-500" /><span className="text-green-500">Copiado</span></>
+                        ) : (
+                          <><Copy className="h-3 w-3" /><span>Copiar</span></>
+                        )}
+                      </button>
+                    )}
                     {msg.content || (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     )}
                   </div>
-                  {msg.role === "assistant" && msg.content && (
-                    <button
-                      onClick={() => copyMessage(msg.content, i)}
-                      className="absolute -bottom-5 right-0 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
-                      title="Copiar resposta"
-                    >
-                      {copiedIdx === i ? (
-                        <><Check className="h-3 w-3 text-green-500" /><span className="text-green-500">Copiado</span></>
-                      ) : (
-                        <><Copy className="h-3 w-3" /><span>Copiar</span></>
-                      )}
-                    </button>
-                  )}
                 </div>
               </div>
             ))}

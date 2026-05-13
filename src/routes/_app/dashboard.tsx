@@ -197,18 +197,18 @@ function StrategicDashboard() {
             onAskClaude={() => claudeRef.current?.ask(`O resultado líquido é ${formatBRL(k.resultadoLiquido)} com margem de ${k.margemLiquida}%. O que está comprimindo a margem líquida e quais ações tomar?`)}
           />
           <KpiCard
-            label="Receita Recorrente"
+            label="Vendas Parceladas"
             value={formatBRL(k.receitaRecorrente)}
-            hint="Contratos manutenção"
+            hint="Total a receber em parcelas"
             icon={Repeat}
-            onAskClaude={() => claudeRef.current?.ask(`A receita recorrente de contratos está em ${formatBRL(k.receitaRecorrente)}. Como está a saúde da base de contratos e o que fazer para aumentar a recorrência?`)}
+            onAskClaude={() => claudeRef.current?.ask(`As vendas parceladas totalizam ${formatBRL(k.receitaRecorrente)} em parcelas a receber. Quais clientes têm mais parcelas pendentes e qual o risco de inadimplência nessa carteira?`)}
           />
           <KpiCard
-            label="Receita Não Recorrente"
+            label="Vendas à Vista"
             value={formatBRL(k.receitaNaoRecorrente)}
-            hint="Venda avulsa"
+            hint="Compras pagas de uma vez"
             icon={DollarSign}
-            onAskClaude={() => claudeRef.current?.ask(`A receita não recorrente (avulsa) está em ${formatBRL(k.receitaNaoRecorrente)}. Qual a relação entre receita recorrente e avulsa e como converter mais clientes para contratos?`)}
+            onAskClaude={() => claudeRef.current?.ask(`As vendas à vista somam ${formatBRL(k.receitaNaoRecorrente)}. Como está o volume de vendas à vista vs. parceladas e qual a tendência desse mix?`)}
           />
           <KpiCard
             label="Caixa D+30"
@@ -231,6 +231,8 @@ function StrategicDashboard() {
             <AlertasRecomendacoes
               title="Atenção do CEO hoje"
               items={cockpitCEO}
+              carousel
+              carouselInterval={7000}
             />
           </div>
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
