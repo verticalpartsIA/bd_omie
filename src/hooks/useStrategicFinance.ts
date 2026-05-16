@@ -1,40 +1,22 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import type { StrategicKpis, ConcentracaoData } from "./useStrategicDashboard";
 
-// ── Raw CR/CP sums query ───────────────────────────────────────────────────────
+// ── CR/CP sums via server route (service_role — bypasses RLS) ─────────────────
+
+interface CRCPSums {
+  crAberto:      number;
+  cpAberto:      number;
+  inadimplencia: number;
+}
 
 function useCRCPSums() {
-  return useQuery({
+  return useQuery<CRCPSums>({
     queryKey: ["strategic_finance_sums"],
     queryFn: async () => {
-      const [cr, cp, inad] = await Promise.all([
-        supabase
-          .from("CR_Omie")
-          .select("valor_documento")
-          .in("status_titulo", ["A RECEBER", "ATRASADO"])
-          .limit(5000),
-        supabase
-          .from("CP_Omie")
-          .select("valor_documento")
-          .eq("status_titulo", "A VENCER")
-          .limit(5000),
-        supabase
-          .from("CR_Omie")
-          .select("valor_documento")
-          .eq("status_titulo", "ATRASADO")
-          .limit(5000),
-      ]);
-
-      const sum = (rows: { valor_documento: number | null }[] | null) =>
-        (rows ?? []).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
-
-      return {
-        crAberto:      sum((cr.data   ?? []) as { valor_documento: number | null }[]),
-        cpAberto:      sum((cp.data   ?? []) as { valor_documento: number | null }[]),
-        inadimplencia: sum((inad.data ?? []) as { valor_documento: number | null }[]),
-      };
+      const res = await fetch("/api/finance-sums");
+      if (!res.ok) throw new Error(`finance-sums: ${res.status}`);
+      return res.json() as Promise<CRCPSums>;
     },
     staleTime: 5 * 60 * 1000,
   });

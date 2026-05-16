@@ -204,7 +204,7 @@ export function StrategicFinanceSection({ data }: Props) {
               Inteligência Financeira Estratégica
             </h3>
             <p className="text-[11px] text-muted-foreground">
-              NCG · Ciclo · Liquidez · Endividamento · Equilíbrio · Família Rs · Health Score
+              NCG · Ciclo Financeiro · Liquidez · Endividamento · PE · ROE · ROA · ROI · Health Score
             </p>
           </div>
         </div>
@@ -221,48 +221,72 @@ export function StrategicFinanceSection({ data }: Props) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         <FinanceCard
           icon={<TrendingUp className="h-4 w-4" />}
-          title="NCG Estimada"
-          value={formatBRL(data.ncg)}
-          subtitle={`CR ${formatBRL(data.crAberto)} − CP ${formatBRL(data.cpAberto)}`}
-          status={data.ncgStatus}
+          title="NCG (Cap. de Giro)"
+          value={data.isLoading ? "..." : formatBRL(data.ncg)}
+          subtitle={
+            data.isLoading
+              ? "Carregando CR/CP..."
+              : data.crAberto === 0 && data.cpAberto === 0
+              ? "Sem títulos abertos encontrados"
+              : `CR ${formatBRL(data.crAberto)} − CP ${formatBRL(data.cpAberto)}`
+          }
+          status={data.isLoading ? "atencao" : data.ncgStatus}
           partial
-          onAsk={() => ask(`A NCG estimada da empresa é ${formatBRL(data.ncg)} (CR aberto ${formatBRL(data.crAberto)} − CP aberto ${formatBRL(data.cpAberto)}). O que isso indica sobre a necessidade de capital de giro? Estou crescendo com saúde ou consumindo caixa?`)}
+          onAsk={() => ask(`A NCG (Necessidade de Capital de Giro) estimada é ${formatBRL(data.ncg)} — CR aberto ${formatBRL(data.crAberto)} menos CP aberto ${formatBRL(data.cpAberto)}. O que isso indica sobre a necessidade de capital de giro? Estou crescendo com saúde ou consumindo caixa?`)}
         />
         <FinanceCard
           icon={<Clock className="h-4 w-4" />}
           title="Ciclo Financeiro"
-          value={`${data.cicloFinanceiro}d`}
-          subtitle={`PMR ${data.pmr}d + PME ${data.pme}d − PMP ${data.pmp}d`}
-          status={cicloStatus}
+          value={data.isLoading ? "..." : `${data.cicloFinanceiro}d`}
+          subtitle={
+            data.isLoading
+              ? "Carregando..."
+              : `PMR (rec.) ${data.pmr}d + PME (est.) ${data.pme}d − PMP (pag.) ${data.pmp}d`
+          }
+          status={data.isLoading ? "atencao" : cicloStatus}
           partial
-          onAsk={() => ask(`Meu ciclo financeiro é de ${data.cicloFinanceiro} dias (PMR ${data.pmr}d + PME ${data.pme}d − PMP ${data.pmp}d). Isso é saudável para uma distribuidora de peças importadas? O que devo fazer para reduzir?`)}
+          onAsk={() => ask(`Meu ciclo financeiro é de ${data.cicloFinanceiro} dias — PMR (Prazo Médio de Recebimento) ${data.pmr}d + PME (Prazo Médio de Estoque) ${data.pme}d − PMP (Prazo Médio de Pagamento) ${data.pmp}d. Isso é saudável para uma distribuidora de peças importadas? O que devo fazer para reduzir?`)}
         />
         <FinanceCard
           icon={<Droplets className="h-4 w-4" />}
           title="Liquidez Corrente"
-          value={`${data.liquidezCorrente}x`}
-          subtitle={`Imediata: ${data.liquidezImediata}x · CR/CP`}
-          status={data.liquidezStatus}
+          value={data.isLoading ? "..." : `${data.liquidezCorrente}x`}
+          subtitle={
+            data.isLoading
+              ? "Carregando..."
+              : `Imediata: ${data.liquidezImediata}x · CR ÷ CP`
+          }
+          status={data.isLoading ? "atencao" : data.liquidezStatus}
           partial
-          onAsk={() => ask(`A liquidez corrente está em ${data.liquidezCorrente}x e a liquidez imediata em ${data.liquidezImediata}x. Minha liquidez é suficiente para suportar os próximos meses? Quais ações melhoram esse indicador?`)}
+          onAsk={() => ask(`A liquidez corrente está em ${data.liquidezCorrente}x e a liquidez imediata em ${data.liquidezImediata}x (CR ÷ CP). Minha liquidez é suficiente para suportar os próximos meses? Quais ações melhoram esse indicador?`)}
         />
         <FinanceCard
           icon={<ShieldCheck className="h-4 w-4" />}
           title="Caixa de Segurança"
-          value={`${data.diasCobertura}d`}
-          subtitle={`Recomendado 30d: ${formatBRL(data.caixaSeguranca30)}`}
-          status={diasStatus}
+          value={data.isLoading ? "..." : `${data.diasCobertura}d`}
+          subtitle={
+            data.isLoading
+              ? "Carregando..."
+              : data.diasCobertura === 0
+              ? "Calcule com CP aberto real"
+              : `Recomendado 30d: ${formatBRL(data.caixaSeguranca30)}`
+          }
+          status={data.isLoading ? "atencao" : diasStatus}
           partial
           onAsk={() => ask(`Meu caixa atual cobre ${data.diasCobertura} dias de operação. O recomendado para uma empresa com importação e ciclo longo é 60–90 dias. Qual o risco atual e o que fazer para fortalecer o colchão de caixa?`)}
         />
         <FinanceCard
           icon={<BarChart3 className="h-4 w-4" />}
           title="Dívida / EBITDA 12M"
-          value={`${data.dividaEbitdaRatio}x`}
-          subtitle={`Dívida operacional: ${formatBRL(data.dividaOperacional)}`}
-          status={data.dividaStatus}
+          value={data.isLoading ? "..." : `${data.dividaEbitdaRatio}x`}
+          subtitle={
+            data.isLoading
+              ? "Carregando..."
+              : `CP aberto: ${formatBRL(data.dividaOperacional)}`
+          }
+          status={data.isLoading ? "atencao" : data.dividaStatus}
           partial
-          onAsk={() => ask(`O índice de dívida operacional / EBITDA 12m está em ${data.dividaEbitdaRatio}x com dívida operacional de ${formatBRL(data.dividaOperacional)}. Posso usar capital de terceiros para crescer sem aumentar o risco? Qual a capacidade de alavancagem atual?`)}
+          onAsk={() => ask(`O índice Dívida/EBITDA está em ${data.dividaEbitdaRatio}x com dívida operacional (CP aberto) de ${formatBRL(data.dividaOperacional)}. Posso usar capital de terceiros para crescer sem aumentar o risco? Qual a capacidade de alavancagem atual?`)}
         />
       </div>
 
@@ -270,45 +294,45 @@ export function StrategicFinanceSection({ data }: Props) {
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         <FinanceCard
           icon={<Target className="h-4 w-4" />}
-          title="Ponto de Equilíbrio"
+          title="PE (Ponto de Equilíbrio)"
           value={formatBRL(data.pontoEquilibrio)}
-          subtitle={`Margem segurança: ${data.margemSeguranca}%`}
+          subtitle={`Margem segurança: ${data.margemSeguranca}% · receita acima do PE`}
           status={peStatus}
           partial
-          onAsk={() => ask(`O ponto de equilíbrio estimado é ${formatBRL(data.pontoEquilibrio)} por mês. A margem de segurança atual é de ${data.margemSeguranca}%. Quanto preciso faturar para cobrir minha estrutura? O que acontece se a receita cair?`)}
+          onAsk={() => ask(`O PE (Ponto de Equilíbrio) estimado é ${formatBRL(data.pontoEquilibrio)}/mês. A margem de segurança é ${data.margemSeguranca}%. Quanto preciso faturar para cobrir minha estrutura? O que acontece se a receita cair abaixo do PE?`)}
         />
         <FinanceCard
           icon={<Percent className="h-4 w-4" />}
-          title="Margem Contribuição"
+          title="MC (Margem Contribuição)"
           value={`${data.margemContribuicao}%`}
-          subtitle="Proxy: margem bruta (contribuição por venda)"
+          subtitle="Proxy via margem bruta · estimativa"
           status={data.margemContribuicao > 40 ? "saudavel" : data.margemContribuicao > 25 ? "atencao" : "critico"}
           partial
-          onAsk={() => ask(`A margem de contribuição estimada é ${data.margemContribuicao}%. O que isso significa? Estou vendendo mais mas ganhando menos? Como melhorar a margem sem perder volume?`)}
+          onAsk={() => ask(`A MC (Margem de Contribuição) estimada é ${data.margemContribuicao}%. Isso representa quanto de cada venda sobra para cobrir custos fixos. Estou vendendo mais mas ganhando menos? Como melhorar a margem sem perder volume?`)}
         />
         <FinanceCard
           icon={<Star className="h-4 w-4" />}
-          title="ROE"
+          title="ROE (Ret. s/ PL)"
           value="—"
-          subtitle="Aguarda dado patrimonial (PL não mapeado)"
+          subtitle="Sem PL no Omie · integre balanço"
           status="atencao"
-          onAsk={() => ask("O ROE (Retorno sobre Patrimônio Líquido) ainda não pode ser calculado pois o patrimônio líquido não está mapeado no sistema. O que é o ROE, como interpretá-lo e por que ele importa para a VerticalParts? O retorno do negócio compensa o capital investido?")}
+          onAsk={() => ask("O ROE (Return on Equity — Retorno sobre Patrimônio Líquido) não pode ser calculado pois o PL (Patrimônio Líquido) não está mapeado no Omie. O que é o ROE, como ele indica se o negócio compensa o capital investido, e como a VerticalParts pode melhorar esse índice?")}
         />
         <FinanceCard
           icon={<Flame className="h-4 w-4" />}
-          title="ROA"
+          title="ROA (Ret. s/ Ativos)"
           value="—"
-          subtitle="Aguarda mapeamento de ativos totais"
+          subtitle="Sem ativos totais · integre balanço"
           status="atencao"
-          onAsk={() => ask("O ROA (Retorno sobre Ativos) ainda não pode ser calculado pois os ativos totais não estão mapeados. O que é o ROA, como ele se aplica a uma distribuidora de peças importadas e como melhorar a eficiência dos ativos?")}
+          onAsk={() => ask("O ROA (Return on Assets — Retorno sobre Ativos Totais) não pode ser calculado pois os ativos não estão mapeados. O que é o ROA, como ele mostra eficiência dos ativos numa distribuidora importadora, e como melhorá-lo?")}
         />
         <FinanceCard
           icon={<TrendingUp className="h-4 w-4" />}
-          title="ROI do Estoque"
+          title="ROI (Ret. s/ Estoque)"
           value="—"
-          subtitle="Aguarda custo unitário dos produtos"
+          subtitle="Sem custo unitário · integre CMV"
           status="atencao"
-          onAsk={() => ask("O ROI do estoque não pode ser calculado com precisão pois o custo unitário médio não está disponível. Quais categorias de produtos provavelmente entregam maior ROI? Vale a pena aumentar estoque agora ou o capital está preso?")}
+          onAsk={() => ask("O ROI (Return on Investment — Retorno sobre Investimento no Estoque) não pode ser calculado com precisão pois o CMV unitário não está disponível. Quais famílias de produtos provavelmente entregam maior ROI? Vale aumentar estoque agora ou o capital está preso?")}
         />
       </div>
 
