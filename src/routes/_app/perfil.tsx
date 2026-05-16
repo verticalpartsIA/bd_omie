@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Settings, User, Building2, Users as UsersIcon, Plug, Bell, Target, Sliders, ScrollText, Save } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 import { useAuth } from "@/lib/auth-mock";
@@ -33,7 +34,6 @@ const perfis = [
 
 const integracoes = [
   { nome: "Omie", desc: "ERP — pedidos, NF, clientes, financeiro", status: "disponível" },
-  { nome: "Lovable Cloud", desc: "Backend, autenticação, banco de dados", status: "disponível" },
   { nome: "WhatsApp Business", desc: "Notificações e campanhas RFM", status: "em breve" },
   { nome: "Power BI", desc: "Exportação de modelos para BI corporativo", status: "em breve" },
   { nome: "Google Sheets", desc: "Sincronização bidirecional de planilhas", status: "em breve" },
@@ -57,7 +57,7 @@ function SettingsPage() {
 
   return (
     <>
-      <Topbar crumb="SISTEMA · CONFIGURAÇÕES" title="Configurações" icon={<Settings className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="SISTEMA · CONFIGURAÇÕES" title="Configurações" icon={<Settings className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <h2 className="text-[26px] font-extrabold tracking-tight">Configurações & Administração</h2>
         <p className="mt-1 text-sm text-muted-foreground">Perfil, empresa, equipe, integrações, alertas, metas, parâmetros e auditoria.</p>

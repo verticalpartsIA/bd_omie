@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import { BarChart3, TrendingUp, Users, Package, Award, Filter, Loader2 } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
@@ -55,6 +56,7 @@ function AnalyticalDashboard() {
         title="Analytical Dashboard"
         icon={<BarChart3 className="h-3.5 w-3.5" />}
         onToggleSidebar={toggle}
+        extra={<USDCalendarWidget />}
       />
       <main className="flex-1 px-7 pb-16 pt-6">
 

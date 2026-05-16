@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Tag } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 import { formatBRL } from "@/lib/format";
@@ -54,7 +55,7 @@ function SegmentosPage() {
 
   return (
     <>
-      <Topbar crumb="CADASTROS · SEGMENTAÇÃO" title="Segmentação RFM" icon={<Tag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="CADASTROS · SEGMENTAÇÃO" title="Segmentação RFM" icon={<Tag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
 
         {/* Header */}

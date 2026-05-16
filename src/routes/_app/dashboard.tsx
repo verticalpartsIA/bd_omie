@@ -33,6 +33,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { ExportMenu } from "@/components/app/ExportMenu";
@@ -204,6 +205,7 @@ function StrategicDashboard() {
           title="Strategic Dashboard"
           icon={<LayoutDashboard className="h-3.5 w-3.5" />}
           onToggleSidebar={toggle}
+          extra={<USDCalendarWidget />}
         />
         <main className="flex flex-1 items-center justify-center py-24">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -220,6 +222,7 @@ function StrategicDashboard() {
           title="Strategic Dashboard"
           icon={<LayoutDashboard className="h-3.5 w-3.5" />}
           onToggleSidebar={toggle}
+          extra={<USDCalendarWidget />}
         />
         <main className="flex flex-1 items-center justify-center py-24">
           <p className="text-sm text-destructive">

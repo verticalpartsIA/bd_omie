@@ -2,6 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 import { ClasseBadge } from "@/components/ui/ClasseBadge";
@@ -28,7 +29,7 @@ function ProdutoDetail() {
   if (!p) {
     return (
       <>
-        <Topbar crumb="PRODUTOS" title="Produto" icon={<ShoppingBag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+        <Topbar crumb="PRODUTOS" title="Produto" icon={<ShoppingBag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
         <main className="p-7"><p className="text-sm text-muted-foreground">Produto não encontrado.</p></main>
       </>
     );
@@ -38,7 +39,7 @@ function ProdutoDetail() {
 
   return (
     <>
-      <Topbar crumb="PRODUTOS · DETALHE" title={p.nome} icon={<ShoppingBag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="PRODUTOS · DETALHE" title={p.nome} icon={<ShoppingBag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <Link to="/produtos" className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" /> Voltar para Produtos

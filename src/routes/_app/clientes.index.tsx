@@ -5,6 +5,7 @@ import {
   DollarSign, Receipt, Crown, TrendingUp,
 } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 import { KpiCard } from "@/components/app/KpiCard";
@@ -90,7 +91,7 @@ function ClientesPage() {
 
   return (
     <>
-      <Topbar crumb="CADASTROS · CLIENTES" title="Clientes" icon={<Users className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="CADASTROS · CLIENTES" title="Clientes" icon={<Users className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>

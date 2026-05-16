@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Warehouse, RefreshCw, CalendarClock, PackageX, DollarSign, Boxes, AlertTriangle, TrendingUp } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
@@ -46,7 +47,7 @@ function EstoquePage() {
 
   return (
     <>
-      <Topbar crumb="PRODUTOS · ESTOQUE" title="Estoque" icon={<Warehouse className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="PRODUTOS · ESTOQUE" title="Estoque" icon={<Warehouse className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>

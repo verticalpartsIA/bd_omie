@@ -9,6 +9,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { ExportMenu } from "@/components/app/ExportMenu";
@@ -106,6 +107,7 @@ function FinanceiroPage() {
         title="Financeiro"
         icon={<Activity className="h-3.5 w-3.5" />}
         onToggleSidebar={toggle}
+        extra={<USDCalendarWidget />}
       />
       <main className="flex-1 px-7 pb-16 pt-6">
         {/* Header */}

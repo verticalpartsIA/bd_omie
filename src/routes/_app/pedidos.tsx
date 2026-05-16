@@ -8,6 +8,7 @@ import {
   Cell, PieChart, Pie, ComposedChart, Line,
 } from "recharts";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { ExportMenu } from "@/components/app/ExportMenu";
@@ -106,6 +107,7 @@ function PedidosPage() {
           title="Pedidos"
           icon={<ShoppingCart className="h-3.5 w-3.5" />}
           onToggleSidebar={toggle}
+          extra={<USDCalendarWidget />}
         />
         <main className="flex-1 px-7 pb-16 pt-6">
           <div className="animate-pulse text-muted-foreground">Carregando…</div>
@@ -122,6 +124,7 @@ function PedidosPage() {
           title="Pedidos"
           icon={<ShoppingCart className="h-3.5 w-3.5" />}
           onToggleSidebar={toggle}
+          extra={<USDCalendarWidget />}
         />
         <main className="flex-1 px-7 pb-16 pt-6">
           <div className="text-destructive">Erro ao carregar dados de pedidos.</div>

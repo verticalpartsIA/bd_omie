@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Users, Mail, Phone, MapPin, Calendar, Briefcase } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -41,7 +42,7 @@ function ClienteDetail() {
 
   return (
     <>
-      <Topbar crumb="CADASTROS · CLIENTES · DETALHE" title={c.nome} icon={<Users className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="CADASTROS · CLIENTES · DETALHE" title={c.nome} icon={<Users className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <Link to="/clientes" className="mb-4 inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-3 w-3" /> Voltar para clientes

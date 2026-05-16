@@ -6,6 +6,7 @@ import {
   Line, LineChart, Area, AreaChart,
 } from "recharts";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { useSidebarToggle } from "../_app";
@@ -32,7 +33,7 @@ function VendedoresPage() {
 
   return (
     <>
-      <Topbar crumb="CADASTROS · VENDEDORES" title="Time de Vendas" icon={<Briefcase className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="CADASTROS · VENDEDORES" title="Time de Vendas" icon={<Briefcase className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <div className="mb-5">
           <h2 className="text-[26px] font-extrabold tracking-tight">Como está meu time de vendas?</h2>

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CircleDot, Cable, LayoutGrid, Zap, Layers, Package, Tag } from "lucide-react";
 import { Topbar } from "@/components/app/Topbar";
+import { USDCalendarWidget } from "@/components/app/USDCalendarWidget";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSidebarToggle } from "../_app";
 import { ClasseBadge } from "@/components/ui/ClasseBadge";
@@ -53,7 +54,7 @@ function CategoriasPage() {
 
   return (
     <>
-      <Topbar crumb="PRODUTOS · CATEGORIAS" title="Categorias" icon={<Tag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="PRODUTOS · CATEGORIAS" title="Categorias" icon={<Tag className="h-3.5 w-3.5" />} onToggleSidebar={toggle} extra={<USDCalendarWidget />} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <h2 className="text-[26px] font-extrabold tracking-tight">Visão por Categoria</h2>
         <p className="mt-1 text-sm text-muted-foreground">Saúde de inventário agregada por linha de produto.</p>
