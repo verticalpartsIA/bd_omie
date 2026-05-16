@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   BarChart3,
   MonitorPlay,
+  Building2,
   Package,
   Users,
   Briefcase,
@@ -67,6 +68,8 @@ const groups: NavGroup[] = [
     items: [
       { to: "/pedidos", label: "Orders", icon: ShoppingCart, badge: 12 },
       { to: "/financeiro", label: "Finance", icon: Wallet },
+      { to: "/pessoal", label: "Custo com Pessoal", icon: Users },
+      { to: "/custos-fixos", label: "Custos Fixos", icon: Building2 },
       { to: "/relatorios", label: "Reports", icon: FileBarChart },
     ],
   },

@@ -20,6 +20,7 @@ import { Route as ApiVendedoresRouteImport } from './routes/api/vendedores'
 import { Route as ApiTvRouteImport } from './routes/api/tv'
 import { Route as ApiPedidosRouteImport } from './routes/api/pedidos'
 import { Route as ApiNfeRouteImport } from './routes/api/nfe'
+import { Route as ApiFinanceSumsRouteImport } from './routes/api/finance-sums'
 import { Route as ApiEstoqueRouteImport } from './routes/api/estoque'
 import { Route as ApiClientesRouteImport } from './routes/api/clientes'
 import { Route as ApiClaudeRouteImport } from './routes/api/claude'
@@ -93,6 +94,11 @@ const ApiPedidosRoute = ApiPedidosRouteImport.update({
 const ApiNfeRoute = ApiNfeRouteImport.update({
   id: '/api/nfe',
   path: '/api/nfe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFinanceSumsRoute = ApiFinanceSumsRouteImport.update({
+  id: '/api/finance-sums',
+  path: '/api/finance-sums',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEstoqueRoute = ApiEstoqueRouteImport.update({
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/api/claude': typeof ApiClaudeRoute
   '/api/clientes': typeof ApiClientesRoute
   '/api/estoque': typeof ApiEstoqueRoute
+  '/api/finance-sums': typeof ApiFinanceSumsRoute
   '/api/nfe': typeof ApiNfeRoute
   '/api/pedidos': typeof ApiPedidosRoute
   '/api/tv': typeof ApiTvRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/api/claude': typeof ApiClaudeRoute
   '/api/clientes': typeof ApiClientesRoute
   '/api/estoque': typeof ApiEstoqueRoute
+  '/api/finance-sums': typeof ApiFinanceSumsRoute
   '/api/nfe': typeof ApiNfeRoute
   '/api/pedidos': typeof ApiPedidosRoute
   '/api/tv': typeof ApiTvRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/api/claude': typeof ApiClaudeRoute
   '/api/clientes': typeof ApiClientesRoute
   '/api/estoque': typeof ApiEstoqueRoute
+  '/api/finance-sums': typeof ApiFinanceSumsRoute
   '/api/nfe': typeof ApiNfeRoute
   '/api/pedidos': typeof ApiPedidosRoute
   '/api/tv': typeof ApiTvRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/api/claude'
     | '/api/clientes'
     | '/api/estoque'
+    | '/api/finance-sums'
     | '/api/nfe'
     | '/api/pedidos'
     | '/api/tv'
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/api/claude'
     | '/api/clientes'
     | '/api/estoque'
+    | '/api/finance-sums'
     | '/api/nfe'
     | '/api/pedidos'
     | '/api/tv'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '/api/claude'
     | '/api/clientes'
     | '/api/estoque'
+    | '/api/finance-sums'
     | '/api/nfe'
     | '/api/pedidos'
     | '/api/tv'
@@ -406,6 +418,7 @@ export interface RootRouteChildren {
   ApiClaudeRoute: typeof ApiClaudeRoute
   ApiClientesRoute: typeof ApiClientesRoute
   ApiEstoqueRoute: typeof ApiEstoqueRoute
+  ApiFinanceSumsRoute: typeof ApiFinanceSumsRoute
   ApiNfeRoute: typeof ApiNfeRoute
   ApiPedidosRoute: typeof ApiPedidosRoute
   ApiTvRoute: typeof ApiTvRoute
@@ -489,6 +502,13 @@ declare module '@tanstack/react-router' {
       path: '/api/nfe'
       fullPath: '/api/nfe'
       preLoaderRoute: typeof ApiNfeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/finance-sums': {
+      id: '/api/finance-sums'
+      path: '/api/finance-sums'
+      fullPath: '/api/finance-sums'
+      preLoaderRoute: typeof ApiFinanceSumsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/estoque': {
@@ -686,6 +706,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiClaudeRoute: ApiClaudeRoute,
   ApiClientesRoute: ApiClientesRoute,
   ApiEstoqueRoute: ApiEstoqueRoute,
+  ApiFinanceSumsRoute: ApiFinanceSumsRoute,
   ApiNfeRoute: ApiNfeRoute,
   ApiPedidosRoute: ApiPedidosRoute,
   ApiTvRoute: ApiTvRoute,
