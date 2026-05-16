@@ -26,7 +26,7 @@ function LoginPage() {
 
   return (
     <>
-      <AuthSwitcher />
+      {import.meta.env.DEV && <AuthSwitcher />}
       <SplitShell
         eyebrow="Plataforma B2B"
         title={

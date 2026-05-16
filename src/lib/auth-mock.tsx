@@ -29,6 +29,8 @@ export interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  /** true once localStorage has been read — guards should wait for this before redirecting */
+  hydrated: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   register: (nome: string, email: string, password: string, profile?: Profile) => Promise<AuthUser>;
   logout: () => void;
@@ -52,6 +54,7 @@ function defaultUser(email: string, nome?: string, profile: Profile = "admin"): 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -72,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
     }
+    setHydrated(true);
   }, []);
 
   const persist = (u: AuthUser | null) => {
@@ -85,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthState = {
     user,
     isAuthenticated: !!user,
+    hydrated,
     login: async (email) => {
       await new Promise((r) => setTimeout(r, 300));
       const u = defaultUser(email);

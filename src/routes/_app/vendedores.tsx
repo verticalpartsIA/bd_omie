@@ -1,230 +1,209 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Briefcase, Target, Filter, TrendingUp, Percent, DollarSign, Receipt, Users } from "lucide-react";
+import { Briefcase, TrendingUp, DollarSign, Receipt, Users, ShoppingCart } from "lucide-react";
 import {
-  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
-  Line, LineChart, FunnelChart, Funnel, LabelList, Cell, AreaChart, Area,
+  Bar, BarChart, CartesianGrid, Cell, Legend,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Line, LineChart, Area, AreaChart,
 } from "recharts";
 import { Topbar } from "@/components/app/Topbar";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { useSidebarToggle } from "../_app";
-import {
-  vendedores, funil, conversaoEtapas, cacPorCanal, comissaoMensal,
-  kpisComercial, formatBRL, etapaLabel, canalLabel, totalMeta, totalRealizado,
-} from "@/data/comercial-mock";
-import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
-import { vendedoresAcao } from "@/data/insights-mock";
+import { formatBRL } from "@/lib/format";
+import { useVendedoresDashboard } from "@/hooks/useVendedoresDashboard";
 
 export const Route = createFileRoute("/_app/vendedores")({
-  head: () => ({ meta: [{ title: "Comercial — VerticalParts" }] }),
+  head: () => ({ meta: [{ title: "Vendedores — VerticalParts" }] }),
   component: () => (
     <RoleGuard allow={["admin", "gestor", "vendedor"]}>
-      <ComercialPage />
+      <VendedoresPage />
     </RoleGuard>
   ),
 });
 
-function ComercialPage() {
+const LINE_COLORS = ["#F5C400", "#0288D1", "#2E7D32", "#C62828", "#7B1FA2", "#E65100"];
+
+function VendedoresPage() {
   const toggle = useSidebarToggle();
-  const ranked = [...vendedores].sort((a, b) => b.realizado / b.meta - a.realizado / a.meta);
+  const { data, isLoading } = useVendedoresDashboard();
+  const { vendedores, kpis, etapas, evolucaoMensal, topVendedoresNomes } = data;
 
-  const evolucaoData = Array.from({ length: vendedores[0].diaAtual }, (_, d) => {
-    const point: Record<string, number | string> = { dia: `D${d + 1}` };
-    vendedores.forEach((v) => { point[v.nome] = v.evolucao[d]; });
-    return point;
-  });
-
-  const funilData = funil.map((f) => ({ name: etapaLabel[f.etapa], value: f.quantidade, valor: f.valor }));
-  const cacData = cacPorCanal.map((c) => ({ canal: canalLabel[c.canal], cac: c.cac, clientes: c.clientes }));
+  const maxReceita = vendedores[0]?.receita12m ?? 1;
 
   return (
     <>
-      <Topbar crumb="OPERAÇÃO · COMERCIAL" title="Time Comercial" icon={<Briefcase className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
+      <Topbar crumb="CADASTROS · VENDEDORES" title="Time de Vendas" icon={<Briefcase className="h-3.5 w-3.5" />} onToggleSidebar={toggle} />
       <main className="flex-1 px-7 pb-16 pt-6">
         <div className="mb-5">
-          <h2 className="text-[26px] font-extrabold tracking-tight">Meu time está performando?</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Atingimento, pipeline, conversão, CAC e comissões.</p>
+          <h2 className="text-[26px] font-extrabold tracking-tight">Como está meu time de vendas?</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isLoading
+              ? "Carregando dados reais…"
+              : `${kpis.totalVendedores} vendedores · ${kpis.totalPedidos12m.toLocaleString("pt-BR")} pedidos em 12 meses`}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <KpiCard label="Atingimento Médio" value={`${kpisComercial.atingimentoMedio}%`} delta={kpisComercial.atingimentoDelta} icon={Target} accent />
-          <KpiCard label="Pipeline" value={formatBRL(kpisComercial.pipelineValor)} delta={kpisComercial.pipelineDelta} icon={TrendingUp} />
-          <KpiCard label="Conversão Geral" value={`${kpisComercial.conversaoGeral}%`} delta={kpisComercial.conversaoDelta} icon={Percent} />
-          <KpiCard label="CAC Médio" value={formatBRL(kpisComercial.cacMedio)} delta={kpisComercial.cacDelta} icon={Users} />
-          <KpiCard label="Ticket Médio" value={formatBRL(kpisComercial.ticketMedio)} delta={kpisComercial.ticketDelta} icon={Receipt} />
-          <KpiCard label="Comissões do Mês" value={formatBRL(kpisComercial.comissaoMes)} delta={kpisComercial.comissaoDelta} icon={DollarSign} />
+        {/* KPIs */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          <KpiCard label="Vendedores Ativos" value={kpis.totalVendedores.toString()} hint="com pedidos 12m" icon={Users} />
+          <KpiCard label="Pedidos 12m" value={kpis.totalPedidos12m.toLocaleString("pt-BR")} hint="total do time" icon={ShoppingCart} />
+          <KpiCard label="Receita 12m" value={formatBRL(kpis.totalReceita12m)} hint="total vendido" icon={DollarSign} accent />
+          <KpiCard label="Ticket Médio" value={formatBRL(kpis.ticketMedio)} hint="por pedido" icon={Receipt} />
+          <KpiCard label="Top Vendedor" value={kpis.topVendedor.split(" ")[0] ?? "—"} hint="por receita 12m" icon={TrendingUp} />
         </div>
 
+        {/* Ranking + Funil */}
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-            <h4 className="text-sm font-bold">Atingimento de meta por vendedor</h4>
-            <p className="text-[11px] text-muted-foreground">% sobre meta total · barras destacam quem ultrapassou 100% do esperado para o dia atual</p>
+            <h4 className="text-sm font-bold">Ranking de Vendedores</h4>
+            <p className="text-[11px] text-muted-foreground">Receita acumulada · últimos 12 meses</p>
             <div className="mt-3 space-y-3">
-              {ranked.map((v) => {
-                const esperado = v.meta * (v.diaAtual / v.diasUteis);
-                const pct = Math.round((v.realizado / esperado) * 100);
-                const pctMeta = Math.round((v.realizado / v.meta) * 100);
-                const cor = pct >= 100 ? "#2E7D32" : pct >= 80 ? "#F5C400" : "#C62828";
+              {isLoading && <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>}
+              {vendedores.map((v, i) => {
+                const pct = maxReceita > 0 ? Math.round((v.receita12m / maxReceita) * 100) : 0;
+                const cor = i === 0 ? "#F5C400" : i < 3 ? "#2E7D32" : "#6B7280";
                 return (
                   <div key={v.id}>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-semibold">{v.nome}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-mono text-muted-foreground w-5">#{i + 1}</span>
+                        <span className="font-semibold">{v.nome}</span>
+                      </span>
                       <span className="font-mono">
-                        {formatBRL(v.realizado)} <span className="text-muted-foreground">/ {formatBRL(v.meta)}</span>
-                        <span className="ml-2 font-bold" style={{ color: cor }}>{pctMeta}%</span>
+                        <span className="font-bold" style={{ color: cor }}>{formatBRL(v.receita12m)}</span>
+                        <span className="ml-2 text-muted-foreground">{v.pedidos12m} ped · {v.clientes} cli</span>
                       </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, pctMeta)}%`, background: cor }} />
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: cor }} />
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
-              <span className="text-muted-foreground">Total do time</span>
-              <span className="font-mono font-bold">{formatBRL(totalRealizado)} / {formatBRL(totalMeta)}</span>
-            </div>
           </div>
 
+          {/* Funil por etapa */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h4 className="text-sm font-bold">Funil Comercial</h4>
-            <p className="text-[11px] text-muted-foreground">Volume por etapa · receita projetada</p>
+            <h4 className="text-sm font-bold">Pedidos por Etapa</h4>
+            <p className="text-[11px] text-muted-foreground">Distribuição das etapas no Omie</p>
             <div className="mt-3 space-y-2">
-              {funilData.map((f, i) => {
-                const pct = (f.value / funilData[0].value) * 100;
+              {etapas.map((e, i) => {
+                const maxQty = etapas[0]?.quantidade ?? 1;
+                const pct = maxQty > 0 ? Math.round((e.quantidade / maxQty) * 100) : 0;
                 return (
-                  <div key={f.name}>
+                  <div key={e.etapa}>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-semibold">{f.name}</span>
-                      <span className="font-mono text-muted-foreground">{f.value} · {formatBRL(f.valor)}</span>
+                      <span className="font-semibold truncate max-w-[140px]">{e.etapa}</span>
+                      <span className="font-mono text-muted-foreground">{e.quantidade} · {formatBRL(e.valor)}</span>
                     </div>
-                    <div className="h-7 w-full rounded bg-muted">
-                      <div className="flex h-full items-center justify-end rounded bg-primary px-2 text-[10px] font-bold text-primary-foreground" style={{ width: `${pct}%` }}>
-                        {Math.round(pct)}%
+                    <div className="h-6 w-full rounded bg-muted">
+                      <div
+                        className="flex h-full items-center justify-end rounded px-2 text-[10px] font-bold text-white"
+                        style={{ width: `${Math.max(pct, 8)}%`, background: i === 0 ? "#F5C400" : "#374151", color: i === 0 ? "#000" : "#fff" }}
+                      >
+                        {pct}%
                       </div>
                     </div>
                   </div>
                 );
               })}
+              {etapas.length === 0 && <div className="py-4 text-center text-xs text-muted-foreground">Carregando…</div>}
             </div>
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-            <h4 className="text-sm font-bold">Evolução diária acumulada</h4>
-            <p className="text-[11px] text-muted-foreground">Ritmo de cada vendedor ao longo do mês</p>
+        {/* Evolução mensal */}
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h4 className="text-sm font-bold">Receita Mensal · Top 5 Vendedores</h4>
+            <p className="text-[11px] text-muted-foreground">Últimos 6 meses</p>
             <div className="mt-3">
               <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={evolucaoData} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
+                <LineChart data={evolucaoMensal} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: unknown) => formatBRL(Number(v))} />
+                  <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}K`} />
+                  <Tooltip formatter={(v: unknown) => [formatBRL(Number(v)), ""]} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
-                  {vendedores.map((v, i) => (
-                    <Line key={v.id} type="monotone" dataKey={v.nome} stroke={["#F5C400","#0288D1","#2E7D32","#C62828","#7B1FA2","#E65100","#00838F","#5D4037"][i % 8]} strokeWidth={2} dot={false} />
+                  {topVendedoresNomes.map((nome, i) => (
+                    <Line
+                      key={nome}
+                      type="monotone"
+                      dataKey={nome}
+                      stroke={LINE_COLORS[i % LINE_COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
+          {/* Ticket médio por vendedor */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h4 className="text-sm font-bold">Conversão entre etapas</h4>
-            <p className="text-[11px] text-muted-foreground">Onde estamos perdendo oportunidades?</p>
-            <ul className="mt-3 space-y-2 text-xs">
-              {conversaoEtapas.map((c, i) => (
-                <li key={i} className="flex items-center justify-between rounded border border-border bg-background px-3 py-2">
-                  <span><span className="text-muted-foreground">{c.de}</span> → <span className="font-semibold">{c.para}</span></span>
-                  <span className={`font-mono font-bold ${c.taxa >= 40 ? "text-success" : c.taxa >= 20 ? "text-primary" : "text-destructive"}`}>{c.taxa}%</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h4 className="text-sm font-bold">CAC por canal de aquisição</h4>
-            <p className="text-[11px] text-muted-foreground">Investimento ÷ novos clientes adquiridos</p>
+            <h4 className="text-sm font-bold">Ticket Médio por Vendedor</h4>
+            <p className="text-[11px] text-muted-foreground">Valor médio por pedido · últimos 12 meses</p>
             <div className="mt-3">
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={cacData} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="canal" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => formatBRL(v)} />
-                  <Tooltip formatter={(v: unknown) => formatBRL(Number(v))} />
-                  <Bar dataKey="cac" name="CAC" fill="#F5C400" radius={[4,4,0,0]} />
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart
+                  data={vendedores.slice(0, 10).map((v) => ({ nome: v.nome.split(" ")[0], ticket: v.ticketMedio }))}
+                  layout="vertical"
+                  margin={{ top: 8, right: 16, bottom: 8, left: 8 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}K`} />
+                  <YAxis type="category" dataKey="nome" tick={{ fontSize: 10 }} width={80} />
+                  <Tooltip formatter={(v: unknown) => [formatBRL(Number(v)), "Ticket"]} />
+                  <Bar dataKey="ticket" radius={[0, 4, 4, 0]}>
+                    {vendedores.slice(0, 10).map((_, i) => (
+                      <Cell key={i} fill={i === 0 ? "#F5C400" : "#0288D1"} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
-
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h4 className="text-sm font-bold">Comissões acumuladas (6 meses)</h4>
-            <p className="text-[11px] text-muted-foreground">Folha variável projetada do time comercial</p>
-            <div className="mt-3">
-              <ResponsiveContainer width="100%" height={240}>
-                <AreaChart data={comissaoMensal} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => formatBRL(v)} />
-                  <Tooltip formatter={(v: unknown) => formatBRL(Number(v))} />
-                  <Area type="monotone" dataKey="comissao" stroke="#0288D1" fill="#0288D1" fillOpacity={0.2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
         </div>
 
+        {/* Tabela resumo */}
         <div className="mt-6 rounded-xl border border-border bg-card shadow-sm">
           <div className="border-b border-border px-5 py-4">
-            <h4 className="text-sm font-bold">Resumo por vendedor</h4>
-            <p className="text-[11px] text-muted-foreground">Realizado, ticket, pedidos e comissão</p>
+            <h4 className="text-sm font-bold">Resumo por Vendedor</h4>
+            <p className="text-[11px] text-muted-foreground">Pedidos, receita, ticket e clientes únicos · últimos 12 meses</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 <tr>
+                  <th className="px-3 py-2 text-left">#</th>
                   <th className="px-3 py-2 text-left">Vendedor</th>
-                  <th className="px-3 py-2 text-right">Meta</th>
-                  <th className="px-3 py-2 text-right">Realizado</th>
-                  <th className="px-3 py-2 text-right">% Meta</th>
-                  <th className="px-3 py-2 text-right">Margem est.</th>
-                  <th className="px-3 py-2 text-right">Desconto méd.</th>
                   <th className="px-3 py-2 text-right">Pedidos</th>
-                  <th className="px-3 py-2 text-right">Ticket</th>
-                  <th className="px-3 py-2 text-right">Comissão</th>
+                  <th className="px-3 py-2 text-right">Receita 12m</th>
+                  <th className="px-3 py-2 text-right">Ticket Médio</th>
+                  <th className="px-3 py-2 text-right">Clientes Únicos</th>
+                  <th className="px-3 py-2 text-right">Último Pedido</th>
                 </tr>
               </thead>
               <tbody>
-                {ranked.map((v) => {
-                  const pct = Math.round((v.realizado / v.meta) * 100);
-                  const margem = Math.round(v.realizado * 0.34);
-                  const desconto = Math.round(((v.id.charCodeAt(2) % 7) + 4) * 10) / 10;
-                  return (
-                    <tr key={v.id} className="border-t border-border">
-                      <td className="px-3 py-2 font-medium">{v.nome}</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatBRL(v.meta)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatBRL(v.realizado)}</td>
-                      <td className={`px-3 py-2 text-right font-mono font-bold ${pct >= 80 ? "text-success" : pct >= 50 ? "text-primary" : "text-destructive"}`}>{pct}%</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatBRL(margem)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{desconto}%</td>
-                      <td className="px-3 py-2 text-right font-mono">{v.pedidos}</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatBRL(v.ticketMedio)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{formatBRL(v.comissao)}</td>
-                    </tr>
-                  );
-                })}
+                {isLoading && (
+                  <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">Carregando dados reais…</td></tr>
+                )}
+                {vendedores.map((v, i) => (
+                  <tr key={v.id} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-3 py-2 font-mono text-muted-foreground">{i + 1}</td>
+                    <td className="px-3 py-2 font-medium">{v.nome}</td>
+                    <td className="px-3 py-2 text-right font-mono">{v.pedidos12m.toLocaleString("pt-BR")}</td>
+                    <td className="px-3 py-2 text-right font-mono font-bold">{formatBRL(v.receita12m)}</td>
+                    <td className="px-3 py-2 text-right font-mono">{formatBRL(v.ticketMedio)}</td>
+                    <td className="px-3 py-2 text-right font-mono">{v.clientes}</td>
+                    <td className="px-3 py-2 text-right font-mono text-xs text-muted-foreground">{v.ultimoPedido}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div className="mt-6">
-          <AlertasRecomendacoes title="Vendedores que precisam de atenção" items={vendedoresAcao} empty="Time inteiro no ritmo esperado." />
         </div>
       </main>
     </>

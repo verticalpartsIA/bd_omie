@@ -17,6 +17,7 @@ import {
   Warehouse,
   ArrowLeftRight,
   Target,
+  Tv2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-mock";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string | number;
+  newTab?: boolean;
 }
 
 interface NavGroup {
@@ -40,6 +42,7 @@ const groups: NavGroup[] = [
       { to: "/dashboard", label: "Strategic Dashboard", icon: LayoutDashboard },
       { to: "/analytical", label: "Analytical Dashboard", icon: BarChart3 },
       { to: "/operational", label: "Operational Dashboard", icon: MonitorPlay },
+      { to: "/tv", label: "TV · Sala de Controle", icon: Tv2, newTab: true },
     ],
   },
   {
@@ -135,6 +138,8 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                   <Link
                     key={item.to}
                     to={item.to}
+                    target={item.newTab ? "_blank" : undefined}
+                    rel={item.newTab ? "noopener noreferrer" : undefined}
                     className={cn(
                       "group relative flex items-center gap-3 rounded px-3 py-2.5 text-[13px] font-medium transition-colors",
                       active

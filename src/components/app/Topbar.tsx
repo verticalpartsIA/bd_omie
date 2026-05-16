@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { PanelLeft, HelpCircle, Bell, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-mock";
@@ -14,9 +15,10 @@ interface TopbarProps {
   title: string;
   icon?: React.ReactNode;
   onToggleSidebar: () => void;
+  extra?: ReactNode;
 }
 
-export function Topbar({ crumb, title, icon, onToggleSidebar }: TopbarProps) {
+export function Topbar({ crumb, title, icon, onToggleSidebar, extra }: TopbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const initials =
@@ -47,10 +49,26 @@ export function Topbar({ crumb, title, icon, onToggleSidebar }: TopbarProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <button className="flex h-[38px] w-[38px] items-center justify-center rounded text-foreground/70 hover:bg-muted">
+        {extra && (
+          <>
+            {extra}
+            <div className="mx-1 h-7 w-px bg-border" />
+          </>
+        )}
+        <button
+          aria-label="Ajuda"
+          title="Ajuda"
+          onClick={() => window.open("mailto:suporte@verticalparts.com.br", "_blank")}
+          className="flex h-[38px] w-[38px] items-center justify-center rounded text-foreground/70 hover:bg-muted"
+        >
           <HelpCircle className="h-4 w-4" />
         </button>
-        <button className="relative flex h-[38px] w-[38px] items-center justify-center rounded text-foreground/70 hover:bg-muted">
+        <button
+          aria-label="Notificações"
+          title="Notificações"
+          onClick={() => {}}
+          className="relative flex h-[38px] w-[38px] items-center justify-center rounded text-foreground/70 hover:bg-muted"
+        >
           <Bell className="h-4 w-4" />
           <span className="absolute right-2.5 top-2 h-2 w-2 rounded-full border-2 border-background bg-primary" />
         </button>

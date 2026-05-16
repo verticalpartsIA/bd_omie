@@ -9,13 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TvRouteImport } from './routes/tv'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiVendedoresRouteImport } from './routes/api/vendedores'
+import { Route as ApiTvRouteImport } from './routes/api/tv'
+import { Route as ApiPedidosRouteImport } from './routes/api/pedidos'
+import { Route as ApiNfeRouteImport } from './routes/api/nfe'
+import { Route as ApiEstoqueRouteImport } from './routes/api/estoque'
+import { Route as ApiClientesRouteImport } from './routes/api/clientes'
 import { Route as ApiClaudeRouteImport } from './routes/api/claude'
+import { Route as ApiAnalyticalRouteImport } from './routes/api/analytical'
 import { Route as AppVendedoresRouteImport } from './routes/_app/vendedores'
 import { Route as AppSegmentosRouteImport } from './routes/_app/segmentos'
 import { Route as AppRelatoriosRouteImport } from './routes/_app/relatorios'
@@ -33,6 +41,11 @@ import { Route as AppClientesIndexRouteImport } from './routes/_app/clientes.ind
 import { Route as AppProdutosIdRouteImport } from './routes/_app/produtos.$id'
 import { Route as AppClientesIdRouteImport } from './routes/_app/clientes.$id'
 
+const TvRoute = TvRouteImport.update({
+  id: '/tv',
+  path: '/tv',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -62,9 +75,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVendedoresRoute = ApiVendedoresRouteImport.update({
+  id: '/api/vendedores',
+  path: '/api/vendedores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTvRoute = ApiTvRouteImport.update({
+  id: '/api/tv',
+  path: '/api/tv',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPedidosRoute = ApiPedidosRouteImport.update({
+  id: '/api/pedidos',
+  path: '/api/pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNfeRoute = ApiNfeRouteImport.update({
+  id: '/api/nfe',
+  path: '/api/nfe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEstoqueRoute = ApiEstoqueRouteImport.update({
+  id: '/api/estoque',
+  path: '/api/estoque',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClientesRoute = ApiClientesRouteImport.update({
+  id: '/api/clientes',
+  path: '/api/clientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiClaudeRoute = ApiClaudeRouteImport.update({
   id: '/api/claude',
   path: '/api/claude',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAnalyticalRoute = ApiAnalyticalRouteImport.update({
+  id: '/api/analytical',
+  path: '/api/analytical',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppVendedoresRoute = AppVendedoresRouteImport.update({
@@ -154,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tv': typeof TvRoute
   '/analytical': typeof AppAnalyticalRoute
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
@@ -166,7 +215,14 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof AppRelatoriosRoute
   '/segmentos': typeof AppSegmentosRoute
   '/vendedores': typeof AppVendedoresRoute
+  '/api/analytical': typeof ApiAnalyticalRoute
   '/api/claude': typeof ApiClaudeRoute
+  '/api/clientes': typeof ApiClientesRoute
+  '/api/estoque': typeof ApiEstoqueRoute
+  '/api/nfe': typeof ApiNfeRoute
+  '/api/pedidos': typeof ApiPedidosRoute
+  '/api/tv': typeof ApiTvRoute
+  '/api/vendedores': typeof ApiVendedoresRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/clientes/': typeof AppClientesIndexRoute
@@ -178,6 +234,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tv': typeof TvRoute
   '/analytical': typeof AppAnalyticalRoute
   '/categorias': typeof AppCategoriasRoute
   '/dashboard': typeof AppDashboardRoute
@@ -190,7 +247,14 @@ export interface FileRoutesByTo {
   '/relatorios': typeof AppRelatoriosRoute
   '/segmentos': typeof AppSegmentosRoute
   '/vendedores': typeof AppVendedoresRoute
+  '/api/analytical': typeof ApiAnalyticalRoute
   '/api/claude': typeof ApiClaudeRoute
+  '/api/clientes': typeof ApiClientesRoute
+  '/api/estoque': typeof ApiEstoqueRoute
+  '/api/nfe': typeof ApiNfeRoute
+  '/api/pedidos': typeof ApiPedidosRoute
+  '/api/tv': typeof ApiTvRoute
+  '/api/vendedores': typeof ApiVendedoresRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/produtos/$id': typeof AppProdutosIdRoute
   '/clientes': typeof AppClientesIndexRoute
@@ -204,6 +268,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tv': typeof TvRoute
   '/_app/analytical': typeof AppAnalyticalRoute
   '/_app/categorias': typeof AppCategoriasRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -216,7 +281,14 @@ export interface FileRoutesById {
   '/_app/relatorios': typeof AppRelatoriosRoute
   '/_app/segmentos': typeof AppSegmentosRoute
   '/_app/vendedores': typeof AppVendedoresRoute
+  '/api/analytical': typeof ApiAnalyticalRoute
   '/api/claude': typeof ApiClaudeRoute
+  '/api/clientes': typeof ApiClientesRoute
+  '/api/estoque': typeof ApiEstoqueRoute
+  '/api/nfe': typeof ApiNfeRoute
+  '/api/pedidos': typeof ApiPedidosRoute
+  '/api/tv': typeof ApiTvRoute
+  '/api/vendedores': typeof ApiVendedoresRoute
   '/_app/clientes/$id': typeof AppClientesIdRoute
   '/_app/produtos/$id': typeof AppProdutosIdRoute
   '/_app/clientes/': typeof AppClientesIndexRoute
@@ -230,6 +302,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/tv'
     | '/analytical'
     | '/categorias'
     | '/dashboard'
@@ -242,7 +315,14 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/segmentos'
     | '/vendedores'
+    | '/api/analytical'
     | '/api/claude'
+    | '/api/clientes'
+    | '/api/estoque'
+    | '/api/nfe'
+    | '/api/pedidos'
+    | '/api/tv'
+    | '/api/vendedores'
     | '/clientes/$id'
     | '/produtos/$id'
     | '/clientes/'
@@ -254,6 +334,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/tv'
     | '/analytical'
     | '/categorias'
     | '/dashboard'
@@ -266,7 +347,14 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/segmentos'
     | '/vendedores'
+    | '/api/analytical'
     | '/api/claude'
+    | '/api/clientes'
+    | '/api/estoque'
+    | '/api/nfe'
+    | '/api/pedidos'
+    | '/api/tv'
+    | '/api/vendedores'
     | '/clientes/$id'
     | '/produtos/$id'
     | '/clientes'
@@ -279,6 +367,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/tv'
     | '/_app/analytical'
     | '/_app/categorias'
     | '/_app/dashboard'
@@ -291,7 +380,14 @@ export interface FileRouteTypes {
     | '/_app/relatorios'
     | '/_app/segmentos'
     | '/_app/vendedores'
+    | '/api/analytical'
     | '/api/claude'
+    | '/api/clientes'
+    | '/api/estoque'
+    | '/api/nfe'
+    | '/api/pedidos'
+    | '/api/tv'
+    | '/api/vendedores'
     | '/_app/clientes/$id'
     | '/_app/produtos/$id'
     | '/_app/clientes/'
@@ -305,11 +401,26 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TvRoute: typeof TvRoute
+  ApiAnalyticalRoute: typeof ApiAnalyticalRoute
   ApiClaudeRoute: typeof ApiClaudeRoute
+  ApiClientesRoute: typeof ApiClientesRoute
+  ApiEstoqueRoute: typeof ApiEstoqueRoute
+  ApiNfeRoute: typeof ApiNfeRoute
+  ApiPedidosRoute: typeof ApiPedidosRoute
+  ApiTvRoute: typeof ApiTvRoute
+  ApiVendedoresRoute: typeof ApiVendedoresRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tv': {
+      id: '/tv'
+      path: '/tv'
+      fullPath: '/tv'
+      preLoaderRoute: typeof TvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -352,11 +463,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/vendedores': {
+      id: '/api/vendedores'
+      path: '/api/vendedores'
+      fullPath: '/api/vendedores'
+      preLoaderRoute: typeof ApiVendedoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tv': {
+      id: '/api/tv'
+      path: '/api/tv'
+      fullPath: '/api/tv'
+      preLoaderRoute: typeof ApiTvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pedidos': {
+      id: '/api/pedidos'
+      path: '/api/pedidos'
+      fullPath: '/api/pedidos'
+      preLoaderRoute: typeof ApiPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/nfe': {
+      id: '/api/nfe'
+      path: '/api/nfe'
+      fullPath: '/api/nfe'
+      preLoaderRoute: typeof ApiNfeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/estoque': {
+      id: '/api/estoque'
+      path: '/api/estoque'
+      fullPath: '/api/estoque'
+      preLoaderRoute: typeof ApiEstoqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/clientes': {
+      id: '/api/clientes'
+      path: '/api/clientes'
+      fullPath: '/api/clientes'
+      preLoaderRoute: typeof ApiClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/claude': {
       id: '/api/claude'
       path: '/api/claude'
       fullPath: '/api/claude'
       preLoaderRoute: typeof ApiClaudeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/analytical': {
+      id: '/api/analytical'
+      path: '/api/analytical'
+      fullPath: '/api/analytical'
+      preLoaderRoute: typeof ApiAnalyticalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/vendedores': {
@@ -521,7 +681,15 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TvRoute: TvRoute,
+  ApiAnalyticalRoute: ApiAnalyticalRoute,
   ApiClaudeRoute: ApiClaudeRoute,
+  ApiClientesRoute: ApiClientesRoute,
+  ApiEstoqueRoute: ApiEstoqueRoute,
+  ApiNfeRoute: ApiNfeRoute,
+  ApiPedidosRoute: ApiPedidosRoute,
+  ApiTvRoute: ApiTvRoute,
+  ApiVendedoresRoute: ApiVendedoresRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

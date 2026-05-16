@@ -45,7 +45,7 @@ function ResetPage() {
 
   return (
     <>
-      <AuthSwitcher />
+      {import.meta.env.DEV && <AuthSwitcher />}
       <CenteredShell>
         <FormHead
           eyebrow="Nova senha"

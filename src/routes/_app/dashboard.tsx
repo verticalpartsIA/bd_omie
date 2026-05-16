@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Area,
@@ -37,10 +37,11 @@ import { KpiCard } from "@/components/app/KpiCard";
 import { RoleGuard } from "@/components/app/RoleGuard";
 import { ExportMenu } from "@/components/app/ExportMenu";
 import { AlertasRecomendacoes } from "@/components/app/AlertasRecomendacoes";
-import { ClaudeChat, type ClaudeChatHandle } from "@/components/app/ClaudeChat";
 import { PeriodSelector, type DateRange } from "@/components/app/PeriodSelector";
 import { formatBRL } from "@/data/executive-mock";
+import { formatBRLCompact } from "@/lib/format";
 import { useStrategicDashboard } from "@/hooks/useStrategicDashboard";
+import { useNfeDashboard } from "@/hooks/useNfeDashboard";
 import { useSidebarToggle } from "../_app";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -94,9 +95,12 @@ function currentPeriodLabel() {
   return `${months[now.getMonth()]} ${now.getFullYear()}`;
 }
 
+function askClaude(q: string) {
+  window.dispatchEvent(new CustomEvent("claude-ask", { detail: q }));
+}
+
 function StrategicDashboard() {
   const toggle = useSidebarToggle();
-  const claudeRef = useRef<ClaudeChatHandle>(null);
   const [dateRange, setDateRange] = useState<DateRange>({
     from: isoMonthsAgo(1),
     to: isoToday(),
@@ -106,6 +110,16 @@ function StrategicDashboard() {
     mixFamilias, mixCanal, pedidosSemana,
     isLoading, isError,
   } = useStrategicDashboard();
+
+  const { custoMap } = useNfeDashboard();
+  const lucroBrutoNfe = useMemo(() => {
+    let t = 0; custoMap.forEach((n) => { t += n.lucroBrutoBrl ?? 0; }); return t;
+  }, [custoMap]);
+  const margemNfeMedia = useMemo(() => {
+    let r = 0, l = 0;
+    custoMap.forEach((n) => { r += n.receitaNfeBrl; l += n.lucroBrutoBrl ?? 0; });
+    return r > 0 ? (l / r) * 100 : null;
+  }, [custoMap]);
 
   // ── Derive filtered KPIs based on selected date range ───────────────────────
   const k = (() => {
@@ -255,14 +269,14 @@ function StrategicDashboard() {
             delta={k.ebitdaDelta}
             hint={`${k.ebitdaPct}% margem`}
             icon={Activity}
-            onAskClaude={() => claudeRef.current?.ask(`O EBITDA está em ${formatBRL(k.ebitda)} com margem de ${k.ebitdaPct}% e variação MoM de ${k.ebitdaDelta > 0 ? "+" : ""}${k.ebitdaDelta}%. O que está impactando e como melhorar?`)}
+            onAskClaude={() => askClaude(`O EBITDA está em ${formatBRL(k.ebitda)} com margem de ${k.ebitdaPct}% e variação MoM de ${k.ebitdaDelta > 0 ? "+" : ""}${k.ebitdaDelta}%. O que está impactando e como melhorar?`)}
           />
           <KpiCard
             label="Resultado Líquido"
             value={formatBRL(k.resultadoLiquido)}
             hint={`${k.margemLiquida}% margem`}
             icon={Percent}
-            onAskClaude={() => claudeRef.current?.ask(`O resultado líquido é ${formatBRL(k.resultadoLiquido)} com margem de ${k.margemLiquida}%. O que está comprimindo a margem líquida e quais ações tomar?`)}
+            onAskClaude={() => askClaude(`O resultado líquido é ${formatBRL(k.resultadoLiquido)} com margem de ${k.margemLiquida}%. O que está comprimindo a margem líquida e quais ações tomar?`)}
           />
           <KpiCard
             label="Vendas Parceladas"
@@ -270,7 +284,7 @@ function StrategicDashboard() {
             hint="Saldo de parcelas a receber"
             icon={Repeat}
             badge={tituloCounts.parceladas || undefined}
-            onAskClaude={() => claudeRef.current?.ask(`As vendas parceladas totalizam ${formatBRL(k.receitaRecorrente)} em ${tituloCounts.parceladas} clientes. Quais clientes têm mais parcelas pendentes e qual o risco de inadimplência nessa carteira?`)}
+            onAskClaude={() => askClaude(`As vendas parceladas totalizam ${formatBRL(k.receitaRecorrente)} em ${tituloCounts.parceladas} clientes. Quais clientes têm mais parcelas pendentes e qual o risco de inadimplência nessa carteira?`)}
           />
           <KpiCard
             label="Caixa D+30"
@@ -278,14 +292,14 @@ function StrategicDashboard() {
             icon={Wallet}
             accent
             badge={tituloCounts.caixa30 || undefined}
-            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+30 está em ${formatBRL(k.caixa30)}${k.caixa30 < 0 ? " (NEGATIVO)" : ""} com ${tituloCounts.caixa30} títulos vencendo. Quais são os principais riscos de liquidez nos próximos 30 dias e o que fazer?`)}
+            onAskClaude={() => askClaude(`O caixa projetado D+30 está em ${formatBRL(k.caixa30)}${k.caixa30 < 0 ? " (NEGATIVO)" : ""} com ${tituloCounts.caixa30} títulos vencendo. Quais são os principais riscos de liquidez nos próximos 30 dias e o que fazer?`)}
           />
           <KpiCard
             label="Caixa D+90"
             value={formatBRL(k.caixa90)}
             icon={Wallet}
             badge={tituloCounts.caixa90 || undefined}
-            onAskClaude={() => claudeRef.current?.ask(`O caixa projetado D+90 está em ${formatBRL(k.caixa90)}${k.caixa90 < 0 ? " (NEGATIVO)" : ""} com ${tituloCounts.caixa90} títulos no horizonte. Quais são os riscos de caixa e quais ações priorizar?`)}
+            onAskClaude={() => askClaude(`O caixa projetado D+90 está em ${formatBRL(k.caixa90)}${k.caixa90 < 0 ? " (NEGATIVO)" : ""} com ${tituloCounts.caixa90} títulos no horizonte. Quais são os riscos de caixa e quais ações priorizar?`)}
           />
         </div>
 
@@ -305,7 +319,7 @@ function StrategicDashboard() {
                 Forecast de Fechamento · {periodLabel}
               </h4>
               <button
-                onClick={() => claudeRef.current?.ask(`O forecast de fechamento do mês está em ${formatBRL(rawK.forecastMes.projetado)} (${forecastPctMeta}% da meta de ${formatBRL(rawK.forecastMes.meta)}). O realizado até agora é ${formatBRL(rawK.forecastMes.realizado)}. Qual a probabilidade de bater a meta e quais ações aceleram o fechamento?`)}
+                onClick={() => askClaude(`O forecast de fechamento do mês está em ${formatBRL(rawK.forecastMes.projetado)} (${forecastPctMeta}% da meta de ${formatBRL(rawK.forecastMes.meta)}). O realizado até agora é ${formatBRL(rawK.forecastMes.realizado)}. Qual a probabilidade de bater a meta e quais ações aceleram o fechamento?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
@@ -370,35 +384,41 @@ function StrategicDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <KpiCard
             accent
             label="Receita do mês"
             value={formatBRL(k.receita)}
             hint="Receita bruta acumulada"
             icon={DollarSign}
-            onAskClaude={() => claudeRef.current?.ask(`A receita do mês está em ${formatBRL(k.receita)}. Como está o ritmo de vendas em relação à meta e o que fazer para acelerar o fechamento?`)}
+            onAskClaude={() => askClaude(`A receita do mês está em ${formatBRL(k.receita)}. Como está o ritmo de vendas em relação à meta e o que fazer para acelerar o fechamento?`)}
           />
           <KpiCard
             label="Margem Bruta"
             value={`${k.margemBruta}%`}
             hint="Após deduções e CPV"
             icon={Percent}
-            onAskClaude={() => claudeRef.current?.ask(`A margem bruta está em ${k.margemBruta}%. O que está impactando o custo dos produtos vendidos e como melhorar essa margem?`)}
+            onAskClaude={() => askClaude(`A margem bruta está em ${k.margemBruta}%. O que está impactando o custo dos produtos vendidos e como melhorar essa margem?`)}
           />
           <KpiCard
             label="Clientes ativos"
             value={k.clientesAtivos > 0 ? k.clientesAtivos.toLocaleString("pt-BR") : "—"}
             hint="Revenda + Cliente Final"
             icon={Users}
-            onAskClaude={() => claudeRef.current?.ask(`Temos ${k.clientesAtivos} clientes ativos (entre Revenda e Cliente Final). Quais são os top clientes por receita nos últimos 12 meses e como está a concentração de risco?`)}
+            onAskClaude={() => askClaude(`Temos ${k.clientesAtivos} clientes ativos (entre Revenda e Cliente Final). Quais são os top clientes por receita nos últimos 12 meses e como está a concentração de risco?`)}
           />
           <KpiCard
             label="SKUs em estoque"
             value="4.140"
             hint="Produtos VP ativos"
             icon={Package}
-            onAskClaude={() => claudeRef.current?.ask(`Quais produtos estão com estoque zerado e têm demanda ativa? Liste os mais críticos para reposição imediata.`)}
+            onAskClaude={() => askClaude(`Quais produtos estão com estoque zerado e têm demanda ativa? Liste os mais críticos para reposição imediata.`)}
+          />
+          <KpiCard
+            label="Lucro Bruto NF-e"
+            value={formatBRLCompact(lucroBrutoNfe)}
+            hint={margemNfeMedia != null ? `Margem real: ${margemNfeMedia.toFixed(1)}%` : "Aguardando sync"}
+            icon={TrendingUp}
           />
         </div>
 
@@ -411,7 +431,7 @@ function StrategicDashboard() {
                 <p className="text-[11px] text-muted-foreground">Riqueza absoluta vs operacional</p>
               </div>
               <button
-                onClick={() => claudeRef.current?.ask(`Analisando a tendência dos últimos 12 meses de Receita, Margem Bruta e EBITDA: quais são os meses de melhor e pior desempenho e o que explica as variações? Qual é a tendência para os próximos meses?`)}
+                onClick={() => askClaude(`Analisando a tendência dos últimos 12 meses de Receita, Margem Bruta e EBITDA: quais são os meses de melhor e pior desempenho e o que explica as variações? Qual é a tendência para os próximos meses?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
@@ -462,7 +482,7 @@ function StrategicDashboard() {
                 <p className="text-[11px] text-muted-foreground">Risco de dependência de poucos clientes</p>
               </div>
               <button
-                onClick={() => claudeRef.current?.ask(`Os top 5 clientes respondem por ${concentracao.top5Pct}% da receita e os top 10 por ${concentracao.top10Pct}%. Qual o risco real dessa concentração e quais estratégias de diversificação priorizar?`)}
+                onClick={() => askClaude(`Os top 5 clientes respondem por ${concentracao.top5Pct}% da receita e os top 10 por ${concentracao.top10Pct}%. Qual o risco real dessa concentração e quais estratégias de diversificação priorizar?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
@@ -543,7 +563,7 @@ function StrategicDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => claudeRef.current?.ask(`Use a ferramenta buscar_evolucao_receita para analisar a tendência de receita mensal nos últimos 12 meses: em quais meses a receita foi maior? Há sazonalidade? Qual a tendência para os próximos meses?`)}
+                  onClick={() => askClaude(`Use a ferramenta buscar_evolucao_receita para analisar a tendência de receita mensal nos últimos 12 meses: em quais meses a receita foi maior? Há sazonalidade? Qual a tendência para os próximos meses?`)}
                   title="Perguntar ao Analista IA"
                   className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
                 >
@@ -598,7 +618,7 @@ function StrategicDashboard() {
                 <p className="text-[11px] text-muted-foreground">Volume 12 meses por família</p>
               </div>
               <button
-                onClick={() => claudeRef.current?.ask(`Use a ferramenta buscar_mix_familias para analisar o mix de vendas por família de produto: qual família tem maior participação, quais têm SKUs zerados e o que fazer para melhorar o mix?`)}
+                onClick={() => askClaude(`Use a ferramenta buscar_mix_familias para analisar o mix de vendas por família de produto: qual família tem maior participação, quais têm SKUs zerados e o que fazer para melhorar o mix?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
@@ -684,7 +704,7 @@ function StrategicDashboard() {
                 </p>
               </div>
               <button
-                onClick={() => claudeRef.current?.ask(`Analisando o volume de pedidos por semana nas últimas 7 semanas: há uma tendência de aceleração ou queda? Quais semanas foram atípicas e o que pode ter causado variações?`)}
+                onClick={() => askClaude(`Analisando o volume de pedidos por semana nas últimas 7 semanas: há uma tendência de aceleração ou queda? Quais semanas foram atípicas e o que pode ter causado variações?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
@@ -732,7 +752,7 @@ function StrategicDashboard() {
                 <p className="text-[11px] text-muted-foreground">Revenda vs Cliente Final · por receita</p>
               </div>
               <button
-                onClick={() => claudeRef.current?.ask(`A VerticalParts vende para "Empresa de Manutenção" (Revenda) e "Cliente Final". Com base nos dados reais de receita por tipo de cliente: qual segmento tem maior ticket médio e qual estratégia adotar para crescer em cada canal?`)}
+                onClick={() => askClaude(`A VerticalParts vende para "Empresa de Manutenção" (Revenda) e "Cliente Final". Com base nos dados reais de receita por tipo de cliente: qual segmento tem maior ticket médio e qual estratégia adotar para crescer em cada canal?`)}
                 title="Perguntar ao Analista IA"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
               >
@@ -780,7 +800,7 @@ function StrategicDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => claudeRef.current?.ask(`Use a ferramenta buscar_evolucao_receita para analisar a tendência de crescimento de receita: qual foi o crescimento no segundo semestre vs primeiro semestre dos últimos 12 meses? Quais fatores explicam a variação e como sustentar o crescimento?`)}
+                  onClick={() => askClaude(`Use a ferramenta buscar_evolucao_receita para analisar a tendência de crescimento de receita: qual foi o crescimento no segundo semestre vs primeiro semestre dos últimos 12 meses? Quais fatores explicam a variação e como sustentar o crescimento?`)}
                   title="Perguntar ao Analista IA"
                   className="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/15 transition-colors"
                 >
@@ -815,7 +835,6 @@ function StrategicDashboard() {
           </div>
         </div>
       </main>
-      <ClaudeChat ref={claudeRef} kpis={k} alertas={cockpitCEO} concentracao={concentracao} />
     </>
   );
 }

@@ -11,12 +11,14 @@ function getEnv(key: string): string {
 
 async function sbQuery(
   table: string,
-  params: Record<string, string>,
+  params: Record<string, string> | Array<[string, string]>,
 ): Promise<unknown[]> {
   const supabaseUrl = getEnv("VITE_SUPABASE_URL");
   const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
   const url = new URL(`${supabaseUrl}/rest/v1/${encodeURIComponent(table)}`);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  // Usa append (não set) para suportar chaves duplicadas como dois filtros em data_vencimento
+  const entries = Array.isArray(params) ? params : Object.entries(params);
+  for (const [k, v] of entries) url.searchParams.append(k, v);
   const res = await fetch(url.toString(), {
     headers: {
       apikey: serviceKey,
@@ -88,15 +90,19 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "buscar_contas_pagar",
     description:
-      "Retorna contas a pagar vencendo nos próximos N dias. Inclui fornecedor, valor e data de vencimento.",
+      "Retorna contas a pagar vencendo nos próximos N dias OU em uma data específica. Use 'data_especifica' (formato YYYY-MM-DD) para perguntas como 'quanto pago na segunda dia 18/05'. Use 'dias' para janelas como 'essa semana' ou 'próximos 30 dias'. Inclui nome do fornecedor, valor e data de vencimento.",
     input_schema: {
       type: "object" as const,
       properties: {
         dias: {
           type: "number",
-          description: "Próximos N dias (padrão 7)",
+          description: "Próximos N dias a partir de hoje (padrão 7). Use para janelas como 'essa semana', 'próximos 30 dias'.",
         },
-        limite: { type: "number" },
+        data_especifica: {
+          type: "string",
+          description: "Data exata no formato YYYY-MM-DD. Use quando o usuário perguntar sobre um dia específico, ex: 2026-05-18 para 'segunda dia 18/05'.",
+        },
+        limite: { type: "number", description: "Máximo de registros (padrão 100)" },
       },
     },
   },
@@ -144,6 +150,26 @@ const TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {},
+    },
+  },
+  {
+    name: "buscar_historico_compras",
+    description:
+      "Retorna o histórico de compras (NF-e entrada, tipo='E') de um ou mais produtos: última data de compra, preço unitário pago, fornecedor e quantidade. Use SEMPRE que discutir compras, reposição de estoque, custo de produto, lista de compras ou importação — mesmo que o usuário não tenha pedido explicitamente. Isso é o diferencial de um CFO de elite: trazer o custo histórico sem precisar ser solicitado.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        codigos: {
+          type: "array",
+          items: { type: "string" },
+          description: "Lista de códigos de produto (ex: ['VPEL-228', 'VPEL-401']). Pode ser um único código em array.",
+        },
+        limite_por_produto: {
+          type: "number",
+          description: "Quantas compras mostrar por produto (padrão 3, para ver evolução de preço)",
+        },
+      },
+      required: ["codigos"],
     },
   },
 ];
@@ -241,21 +267,29 @@ async function executeTool(
       }
 
       case "buscar_contas_pagar": {
-        const dias = Number(input.dias ?? 7);
-        const dataFim = new Date();
-        dataFim.setDate(dataFim.getDate() + dias);
-        const dataStr = dataFim.toISOString().split("T")[0];
         const hoje = new Date().toISOString().split("T")[0];
+        let dataInicio = hoje;
+        let dataFimStr: string;
 
-        const cp = await sbQuery("CP_Omie", {
-          select:
-            "codigo_lancamento_omie,codigo_cliente_omie,valor_documento,data_vencimento,status_titulo",
-          status_titulo: "eq.A VENCER",
-          data_vencimento: `lte.${dataStr}`,
-          "data_vencimento.gte": hoje,
-          order: "data_vencimento.asc",
-          limit: String(input.limite ?? 100),
-        });
+        if (input.data_especifica && typeof input.data_especifica === "string") {
+          // Busca só naquele dia específico
+          dataInicio = input.data_especifica;
+          dataFimStr = input.data_especifica;
+        } else {
+          const dias = Number(input.dias ?? 7);
+          const dataFim = new Date();
+          dataFim.setDate(dataFim.getDate() + dias);
+          dataFimStr = dataFim.toISOString().split("T")[0];
+        }
+
+        const cp = await sbQuery("CP_Omie", [
+          ["select", "codigo_lancamento_omie,codigo_cliente_omie,valor_documento,data_vencimento,status_titulo"],
+          ["status_titulo", "eq.A VENCER"],
+          ["data_vencimento", `gte.${dataInicio}`],
+          ["data_vencimento", `lte.${dataFimStr}`],
+          ["order", "data_vencimento.asc"],
+          ["limit", String(input.limite ?? 100)],
+        ]);
 
         const codigos = [
           ...new Set((cp as any[]).map((r) => r.codigo_cliente_omie)),
@@ -287,6 +321,9 @@ async function executeTool(
           0,
         );
         return JSON.stringify({
+          periodo: input.data_especifica
+            ? `Dia específico: ${dataInicio}`
+            : `De ${dataInicio} até ${dataFimStr}`,
           total_registros: enriched.length,
           valor_total: total.toFixed(2),
           contas: enriched,
@@ -353,6 +390,62 @@ async function executeTool(
         return JSON.stringify({ meses: data.length, historico: data });
       }
 
+      case "buscar_historico_compras": {
+        const codigos = (input.codigos as string[]) ?? [];
+        const limitePorProd = Number(input.limite_por_produto ?? 3);
+        if (codigos.length === 0) {
+          return JSON.stringify({ erro: "Informe ao menos um código de produto" });
+        }
+
+        // Busca NF-e de entrada para cada produto, ordenado pela data mais recente
+        const resultados: Record<string, unknown[]> = {};
+        await Promise.all(
+          codigos.map(async (codigo) => {
+            const rows = await sbQuery("omie_nfe_itens", {
+              select: "codigo_produto,descricao,data_emissao,valor_unitario,quantidade,nome_parceiro,numero_nfe",
+              tipo: "eq.E",
+              codigo_produto: `eq.${codigo.trim()}`,
+              order: "data_emissao.desc",
+              limit: String(limitePorProd),
+            }).catch(() => [] as unknown[]);
+            resultados[codigo] = rows;
+          }),
+        );
+
+        // Enriquece com custo médio ponderado das últimas compras e variação de preço
+        const enriched = Object.entries(resultados).map(([codigo, rows]) => {
+          const compras = (rows as any[]).map((r) => ({
+            data: r.data_emissao,
+            preco_unitario: Number(r.valor_unitario),
+            quantidade: Number(r.quantidade),
+            fornecedor: r.nome_parceiro ?? "—",
+            numero_nfe: r.numero_nfe,
+            descricao: r.descricao,
+          }));
+          const ultima = compras[0] ?? null;
+          const penultima = compras[1] ?? null;
+          const variacao_pct = ultima && penultima && penultima.preco_unitario > 0
+            ? Math.round(((ultima.preco_unitario - penultima.preco_unitario) / penultima.preco_unitario) * 1000) / 10
+            : null;
+          return {
+            codigo,
+            descricao: ultima?.descricao ?? codigo,
+            ultima_compra: ultima?.data ?? null,
+            ultimo_preco_unitario_brl: ultima?.preco_unitario ?? null,
+            ultimo_fornecedor: ultima?.fornecedor ?? null,
+            variacao_pct_vs_anterior: variacao_pct,
+            nota: "Preços em BRL conforme NF-e de entrada. Para produtos importados, o custo total inclui frete internacional (8-15%), seguro (0,5%), II, IPI, ICMS, PIS/COFINS — total landed cost tipicamente 40-70% acima do valor FOB/CIF.",
+            historico: compras,
+          };
+        });
+
+        return JSON.stringify({
+          total_produtos: enriched.length,
+          aviso: "Use os preços históricos para estimar custo atual. Produtos BST/Monarch/Fermator são importados — aplique correção cambial (USD/BRL do dia da compra vs hoje) e adicione custos de importação.",
+          produtos: enriched,
+        });
+      }
+
       default:
         return JSON.stringify({ erro: `Ferramenta desconhecida: ${name}` });
     }
@@ -368,9 +461,10 @@ export const Route = createFileRoute("/api/claude")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { question, context } = (await request.json()) as {
+        const { question, context, history } = (await request.json()) as {
           question: string;
           context: string;
+          history?: { role: "user" | "assistant"; content: string }[];
         };
 
         const apiKey = getEnv("ANTHROPIC_API_KEY");
@@ -382,7 +476,15 @@ export const Route = createFileRoute("/api/claude")({
         }
 
         const client = new Anthropic({ apiKey });
+
+        // Monta histórico completo: turnos anteriores + nova pergunta
+        // Garante alternância user/assistant válida para a API Anthropic
+        const priorTurns: Anthropic.MessageParam[] = (history ?? [])
+          .filter((m) => m.content.trim() !== "")
+          .map((m) => ({ role: m.role, content: m.content }));
+
         const messages: Anthropic.MessageParam[] = [
+          ...priorTurns,
           { role: "user", content: question },
         ];
 

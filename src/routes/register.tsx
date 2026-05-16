@@ -56,7 +56,7 @@ function RegisterPage() {
 
   return (
     <>
-      <AuthSwitcher />
+      {import.meta.env.DEV && <AuthSwitcher />}
       <SplitShell
         eyebrow="Crie sua conta"
         title={

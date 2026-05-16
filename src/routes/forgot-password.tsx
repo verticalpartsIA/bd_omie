@@ -19,7 +19,7 @@ function ForgotPage() {
 
   return (
     <>
-      <AuthSwitcher />
+      {import.meta.env.DEV && <AuthSwitcher />}
       <CenteredShell>
         <FormHead
           eyebrow="Recuperar acesso"
