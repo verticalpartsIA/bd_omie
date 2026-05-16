@@ -4,8 +4,14 @@ import Anthropic from "@anthropic-ai/sdk";
 // ── Supabase helper (server-side, bypasses RLS via service role) ──────────────
 
 function getEnv(key: string): string {
-  // @ts-expect-error Cloudflare Workers global
+  // 1. Cloudflare Workers: variáveis vinculadas como globais
+  // @ts-expect-error
   if (typeof globalThis[key] !== "undefined") return globalThis[key] as string;
+  // 2. Vite dev server: import.meta.env (exposto via envPrefix no vite.config)
+  // @ts-expect-error
+  const metaVal = import.meta.env?.[key];
+  if (metaVal) return metaVal as string;
+  // 3. Node.js process.env (fallback)
   return (process.env[key] as string) ?? "";
 }
 
