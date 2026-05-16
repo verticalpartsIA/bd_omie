@@ -2,21 +2,33 @@ import { useState, useEffect, useRef } from "react";
 import { CalendarDays } from "lucide-react";
 
 export function USDCalendarWidget() {
-  const today = new Date().toISOString().slice(0, 10);
-  const [date, setDate] = useState(today);
+  // Começa sem data no SSR — evita hydration mismatch com Date()
+  const [date, setDate] = useState("");
   const [rate, setRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isToday = date === today;
+  // Inicializa a data apenas no cliente
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    setDate(today);
+    setMounted(true);
+  }, []);
 
-  const displayDate = new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-  });
+  const today = mounted ? new Date().toISOString().slice(0, 10) : "";
+  const isToday = date !== "" && date === today;
+
+  const displayDate = date
+    ? new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+      })
+    : "—";
 
   useEffect(() => {
+    if (!date) return;
     setLoading(true);
     setRate(null);
     const controller = new AbortController();
@@ -67,6 +79,9 @@ export function USDCalendarWidget() {
       clearInterval(interval);
     };
   }, [date, isToday]);
+
+  // Não renderiza no SSR — evita hydration mismatch
+  if (!mounted) return null;
 
   function openPicker() {
     const el = inputRef.current;

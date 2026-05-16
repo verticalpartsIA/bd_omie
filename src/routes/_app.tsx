@@ -32,14 +32,15 @@ function GlobalClaudeChat() {
 function AppLayout() {
   const { isAuthenticated, hydrated } = useAuth();
   const navigate = useNavigate();
-  const isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
-  const [collapsed, setCollapsed] = useState(isMobile);
+  // Sempre começa false no SSR — corrige hydration mismatch
+  const [collapsed, setCollapsed] = useState(false);
   const [clientMounted, setClientMounted] = useState(false);
   const toggle = () => setCollapsed((c) => !c);
 
   useEffect(() => {
     setClientMounted(true);
-    // Auto-collapse on resize below mobile breakpoint
+    // Aplica estado mobile APÓS hidratação (seguro — só roda no cliente)
+    if (window.innerWidth < 768) setCollapsed(true);
     const onResize = () => {
       if (window.innerWidth < 768) setCollapsed(true);
     };
