@@ -178,6 +178,70 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["codigos"],
     },
   },
+  {
+    name: "buscar_dre_resumo",
+    description:
+      "Retorna o DRE (Demonstrativo de Resultado) resumido dos últimos 12 meses: receita, EBITDA e margem por mês, com totais e crescimento. Use para análise de tendência, sazonalidade, crescimento YoY e diagnóstico de resultado.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        meses: {
+          type: "number",
+          description: "Quantos meses retornar (padrão 12)",
+        },
+      },
+    },
+  },
+  {
+    name: "buscar_caixa_estrategico",
+    description:
+      "Retorna a projeção de caixa D+30 e D+90 com entradas previstas (CR a receber), saídas previstas (CP a pagar) e saldo líquido. Use para perguntas sobre saúde de caixa, liquidez, capacidade de pagamento, risco de insolvência, 'estou bem de caixa?', 'o caixa aguenta?'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "buscar_ncg_estimado",
+    description:
+      "Calcula a NCG (Necessidade de Capital de Giro) = CR_aberto - CP_aberto, com os três componentes separados. Use para perguntas sobre capital de giro, ciclo financeiro, liquidez operacional, 'quanto capital preciso para girar o negócio?'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "buscar_curva_abc_produtos",
+    description:
+      "Classifica produtos por Curva ABC baseado em volume de saídas nos últimos 12 meses. Classe A = top 80% do volume (poucos produtos, alto giro), B = próximos 15%, C = restantes 5% (baixo giro). Use para priorização de compras, análise de portfólio, decisões de estoque e descontinuação.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        limite: {
+          type: "number",
+          description: "Máximo de produtos por classe (padrão 50)",
+        },
+        classe: {
+          type: "string",
+          description: "Filtrar por classe específica: 'A', 'B' ou 'C'. Se omitido, retorna todas as classes.",
+        },
+      },
+    },
+  },
+  {
+    name: "buscar_risco_clientes",
+    description:
+      "Análise de risco combinada por cliente: concentração de receita (pct da receita total) + saldo inadimplente em aberto. Calcula nível de risco: CRITICO, ALTO, MODERADO ou BAIXO. Use para gestão de carteira, análise de crédito, 'qual cliente é mais arriscado', 'quem concentra receita e ainda deve'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        limite: {
+          type: "number",
+          description: "Máximo de clientes a retornar (padrão 20)",
+        },
+      },
+    },
+  },
 ];
 
 // ── Tool executor ─────────────────────────────────────────────────────────────
@@ -449,6 +513,151 @@ async function executeTool(
           total_produtos: enriched.length,
           aviso: "Use os preços históricos para estimar custo atual. Produtos BST/Monarch/Fermator são importados — aplique correção cambial (USD/BRL do dia da compra vs hoje) e adicione custos de importação.",
           produtos: enriched,
+        });
+      }
+
+      case "buscar_dre_resumo": {
+        const data = await sbQuery("vw_ebitda_12m", {
+          select: "mes,mes_dt,receita,margem,ebitda",
+          order: "mes_dt.asc",
+          limit: String(input.meses ?? 12),
+        });
+        const rows = data as any[];
+        const totalReceita = rows.reduce((s, r) => s + Number(r.receita ?? 0), 0);
+        const totalEbitda  = rows.reduce((s, r) => s + Number(r.ebitda  ?? 0), 0);
+        const margemMedia  = totalReceita > 0 ? (totalEbitda / totalReceita * 100) : 0;
+        const primeiroMes  = rows[0]?.receita ? Number(rows[0].receita) : 0;
+        const ultimoMes    = rows[rows.length - 1]?.receita ? Number(rows[rows.length - 1].receita) : 0;
+        const crescimento  = rows.length >= 2 && primeiroMes > 0
+          ? Math.round(((ultimoMes - primeiroMes) / primeiroMes) * 1000) / 10
+          : null;
+        return JSON.stringify({
+          resumo: {
+            total_receita_12m: Math.round(totalReceita),
+            total_ebitda_12m:  Math.round(totalEbitda),
+            margem_ebitda_media_pct: Math.round(margemMedia * 10) / 10,
+            crescimento_receita_periodo_pct: crescimento,
+          },
+          meses: rows,
+        });
+      }
+
+      case "buscar_caixa_estrategico": {
+        const data = await sbQuery("vw_caixa_projetado", {
+          select: "data_base,entradas_d30,saidas_d30,saldo_d30,entradas_d90,saidas_d90,saldo_d90",
+          limit: "1",
+        });
+        const row = (data as any[])[0] ?? null;
+        if (!row) return JSON.stringify({ erro: "View vw_caixa_projetado sem dados" });
+        const alertas: string[] = [];
+        const s30 = Number(row.saldo_d30 ?? 0);
+        const s90 = Number(row.saldo_d90 ?? 0);
+        const e30 = Number(row.entradas_d30 ?? 0);
+        const p30 = Number(row.saidas_d30 ?? 0);
+        if (s30 < 0)           alertas.push("CRITICO: saldo D+30 negativo — risco de insolvência em 30 dias");
+        if (s90 < 0)           alertas.push("ALERTA: saldo D+90 negativo — risco de caixa no trimestre");
+        if (e30 > 0 && p30 > e30 * 1.2) alertas.push("ATENCAO: saídas D+30 superam entradas em mais de 20%");
+        if (s30 > 0 && s30 < p30 * 0.1) alertas.push("ATENCAO: saldo D+30 cobre menos de 10% das saídas previstas");
+        return JSON.stringify({ ...row, alertas_automaticos: alertas });
+      }
+
+      case "buscar_ncg_estimado": {
+        const [crData, cpData] = await Promise.all([
+          sbQuery("CR_Omie", [
+            ["select", "valor_documento,status_titulo"],
+            ["status_titulo", "in.(A RECEBER,ATRASADO)"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("CP_Omie", [
+            ["select", "valor_documento,status_titulo"],
+            ["status_titulo", "eq.A VENCER"],
+            ["limit", "10000"],
+          ]),
+        ]);
+        const cr_total = (crData as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const cp_total = (cpData as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const ncg = cr_total - cp_total;
+        const alertas: string[] = [];
+        if (ncg > cr_total * 0.6)  alertas.push("NCG elevada: empresa financia o ciclo com capital próprio — risco de squeeze de caixa");
+        if (ncg < 0)               alertas.push("NCG negativa: fornecedores financiam o ciclo — posição de capital de giro favorável");
+        if (cr_total > cp_total * 3) alertas.push("CR muito maior que CP: verifique inadimplência — parte do CR pode não se converter em caixa");
+        return JSON.stringify({
+          cr_total_aberto: Math.round(cr_total),
+          cp_total_aberto: Math.round(cp_total),
+          ncg_estimado: Math.round(ncg),
+          nota: "NCG calculado como CR_aberto - CP_aberto. Para NCG completo (com estoque monetário), inclua o valor de custo do estoque via ERP.",
+          alertas_automaticos: alertas,
+        });
+      }
+
+      case "buscar_curva_abc_produtos": {
+        const data = await sbQuery("vw_estoque_inteligente", {
+          select: "codigo,descricao,descricao_familia,total_vendido_12m,media_mensal_saidas,quantidade_estoque",
+          order: "total_vendido_12m.desc",
+          limit: "5000",
+        });
+        const rows = data as any[];
+        const totalVol = rows.reduce((s, r) => s + Number(r.total_vendido_12m ?? 0), 0);
+        let cumVol = 0;
+        const classificados = rows.map((r) => {
+          cumVol += Number(r.total_vendido_12m ?? 0);
+          const pct = totalVol > 0 ? cumVol / totalVol : 0;
+          const curva = pct <= 0.80 ? "A" : pct <= 0.95 ? "B" : "C";
+          return {
+            codigo:        r.codigo,
+            descricao:     r.descricao,
+            familia:       r.descricao_familia,
+            volume_12m:    Math.round(Number(r.total_vendido_12m ?? 0)),
+            media_mensal:  Math.round(Number(r.media_mensal_saidas ?? 0)),
+            estoque_atual: Number(r.quantidade_estoque ?? 0),
+            curva,
+          };
+        });
+        const filtroClasse = typeof input.classe === "string" ? input.classe.toUpperCase() : null;
+        const limite = Number(input.limite ?? 50);
+        const filtrados = filtroClasse
+          ? classificados.filter((r) => r.curva === filtroClasse).slice(0, limite)
+          : classificados.slice(0, limite);
+        const dist = { A: 0, B: 0, C: 0 };
+        for (const r of classificados) dist[r.curva as "A" | "B" | "C"]++;
+        return JSON.stringify({
+          total_produtos: classificados.length,
+          distribuicao: dist,
+          total_volume_12m: Math.round(totalVol),
+          nota: "Volume em unidades saídas. A = top 80% do volume (maior giro). B = 80-95%. C = 95-100% (baixo giro).",
+          produtos: filtrados,
+        });
+      }
+
+      case "buscar_risco_clientes": {
+        const limite = Number(input.limite ?? 20);
+        const [concData, crData] = await Promise.all([
+          sbQuery("vw_concentracao_clientes", {
+            select: "codigo_cliente_omie,nome_cliente,receita_total,qtd_titulos,pct_receita",
+            order: "receita_total.desc",
+            limit: String(limite),
+          }),
+          sbQuery("CR_Omie", [
+            ["select", "codigo_cliente_omie,valor_documento,status_titulo"],
+            ["status_titulo", "eq.ATRASADO"],
+            ["limit", "10000"],
+          ]),
+        ]);
+        const inadMap: Record<number, number> = {};
+        for (const r of crData as any[]) {
+          const cid = Number(r.codigo_cliente_omie);
+          inadMap[cid] = (inadMap[cid] ?? 0) + Number(r.valor_documento ?? 0);
+        }
+        const enriched = (concData as any[]).map((c) => {
+          const inadVal = inadMap[Number(c.codigo_cliente_omie)] ?? 0;
+          const recTotal = Number(c.receita_total ?? 0);
+          const inadPct  = recTotal > 0 ? Math.round((inadVal / recTotal) * 1000) / 10 : 0;
+          const nivelRisco = inadPct > 20 ? "CRITICO" : inadPct > 5 ? "ALTO" : inadVal > 0 ? "MODERADO" : "BAIXO";
+          return { ...c, inadimplencia_valor: Math.round(inadVal), inadimplencia_pct_receita: inadPct, nivel_risco: nivelRisco };
+        });
+        return JSON.stringify({
+          total_clientes_analisados: enriched.length,
+          clientes: enriched.sort((a: any, b: any) => b.receita_total - a.receita_total),
         });
       }
 

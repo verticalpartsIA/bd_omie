@@ -1,0 +1,226 @@
+============================================================
+ POPULADOR CRM OMIE — VerticalParts
+ Inicio: 16/05/2026 00:35:56
+ Modo: COMPLETO
+ Resume: NAO
+============================================================
+
+[1/5] Carregando parceiros de negócios do Supabase...
+   [PN_Omie] total: 13827
+   Carregados: 13827 PNs
+
+[2/5] Agregando pedidos por cliente...
+   [omie_orders] total: 25509
+   Pedidos carregados: 25509
+
+[3/5] Classificando ABC...
+   ABC-A: 147 | ABC-B: 388 | ABC-C: 1830
+   Sem pedido: 11462
+
+[4/5] Criando/atualizando Contas no CRM...
+   [   50/13827] 0.4% | OK: 50 | Erros: 0
+   [  100/13827] 0.7% | OK: 94 | Erros: 6
+   [  150/13827] 1.1% | OK: 117 | Erros: 33
+   [  200/13827] 1.4% | OK: 155 | Erros: 45
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [  250/13827] 1.8% | OK: 186 | Erros: 64
+   [  300/13827] 2.2% | OK: 226 | Erros: 74
+   [  350/13827] 2.5% | OK: 261 | Erros: 89
+   [  400/13827] 2.9% | OK: 297 | Erros: 103
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [  450/13827] 3.3% | OK: 335 | Erros: 115
+   [  500/13827] 3.6% | OK: 339 | Erros: 161
+   [  550/13827] 4.0% | OK: 371 | Erros: 179
+   [  600/13827] 4.3% | OK: 419 | Erros: 181
+   [  650/13827] 4.7% | OK: 465 | Erros: 185
+   [  700/13827] 5.1% | OK: 511 | Erros: 189
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [  750/13827] 5.4% | OK: 549 | Erros: 201
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [  800/13827] 5.8% | OK: 581 | Erros: 219
+   [  850/13827] 6.1% | OK: 618 | Erros: 232
+   [  900/13827] 6.5% | OK: 653 | Erros: 247
+   [  950/13827] 6.9% | OK: 687 | Erros: 263
+   [ 1000/13827] 7.2% | OK: 721 | Erros: 279
+   [ERRO 1001/13827] DESPESAS COM PESSOAL -> ERROR: Consumo redundante detectado. Aguarde 60 segundos para tentar novamente (
+   [ 1050/13827] 7.6% | OK: 751 | Erros: 299
+   [ 1100/13827] 8.0% | OK: 782 | Erros: 318
+   [ 1150/13827] 8.3% | OK: 818 | Erros: 332
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 1200/13827] 8.7% | OK: 868 | Erros: 332
+   [ 1250/13827] 9.0% | OK: 916 | Erros: 334
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 1300/13827] 9.4% | OK: 947 | Erros: 353
+   [ 1350/13827] 9.8% | OK: 982 | Erros: 368
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [RETRY 1] ('Connection aborted.', ConnectionResetError(10054, 'Foi forçado o cancelamento de uma conexão existente pelo host remoto', None, 10054, None))
+   [RETRY 2] HTTPSConnectionPool(host='app.omie.com.br', port=443): Max retries exceeded with url: /api/v1/crm/contas/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000002040734F080>: Failed to resolve 'app.omie.com.br' ([Errno 11001] getaddrinfo failed)"))
+   [RETRY 3] HTTPSConnectionPool(host='app.omie.com.br', port=443): Max retries exceeded with url: /api/v1/crm/contas/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000002040734D160>: Failed to resolve 'app.omie.com.br' ([Errno 11001] getaddrinfo failed)"))
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Max retries exceeded with url: /api/v1/crm/contas/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000002040734FE90>: Failed to resolve 'app.omie.com.br' ([Errno 11001] getaddrinfo failed)"))
+   [ 1400/13827] 10.1% | OK: 1005 | Erros: 395
+   [ 1450/13827] 10.5% | OK: 1025 | Erros: 425
+   [ 1500/13827] 10.8% | OK: 1059 | Erros: 441
+   [ERRO 1501/13827] LUBRISEN COMBUSTIVEIS E LUBRIFICANTES LT -> ERROR: Consumo redundante detectado. Aguarde 60 segundos para tentar novamente (
+   [ 1550/13827] 11.2% | OK: 1091 | Erros: 459
+   [ 1600/13827] 11.6% | OK: 1124 | Erros: 476
+   [ 1650/13827] 11.9% | OK: 1153 | Erros: 497
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 1700/13827] 12.3% | OK: 1186 | Erros: 514
+   [ 1750/13827] 12.7% | OK: 1218 | Erros: 532
+   [ 1800/13827] 13.0% | OK: 1251 | Erros: 549
+   [ 1850/13827] 13.4% | OK: 1283 | Erros: 567
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 1900/13827] 13.7% | OK: 1322 | Erros: 578
+   [ 1950/13827] 14.1% | OK: 1356 | Erros: 594
+   [ 2000/13827] 14.5% | OK: 1388 | Erros: 612
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 2050/13827] 14.8% | OK: 1420 | Erros: 630
+   [ 2100/13827] 15.2% | OK: 1448 | Erros: 652
+   [ 2150/13827] 15.5% | OK: 1475 | Erros: 675
+   [ 2200/13827] 15.9% | OK: 1516 | Erros: 684
+   [ 2250/13827] 16.3% | OK: 1544 | Erros: 706
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 2300/13827] 16.6% | OK: 1569 | Erros: 731
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 2350/13827] 17.0% | OK: 1597 | Erros: 753
+   [ 2400/13827] 17.4% | OK: 1630 | Erros: 770
+   [ 2450/13827] 17.7% | OK: 1664 | Erros: 786
+   [ 2500/13827] 18.1% | OK: 1697 | Erros: 803
+   [ 2550/13827] 18.4% | OK: 1741 | Erros: 809
+   [ 2600/13827] 18.8% | OK: 1790 | Erros: 810
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 2650/13827] 19.2% | OK: 1811 | Erros: 839
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 2700/13827] 19.5% | OK: 1811 | Erros: 889
+   [ 2750/13827] 19.9% | OK: 1811 | Erros: 939
+   [ 2800/13827] 20.3% | OK: 1811 | Erros: 989
+   [ 2850/13827] 20.6% | OK: 1811 | Erros: 1039
+   [ 2900/13827] 21.0% | OK: 1811 | Erros: 1089
+   [ 2950/13827] 21.3% | OK: 1811 | Erros: 1139
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 3000/13827] 21.7% | OK: 1811 | Erros: 1189
+   [ERRO 3001/13827] SOLIDEZ TRANSPORTES LTDA -> ERROR: API bloqueada por consumo indevido. Tente novamente em 1560 segundos.
+   [ 3050/13827] 22.1% | OK: 1811 | Erros: 1239
+   [ 3100/13827] 22.4% | OK: 1811 | Erros: 1289
+   [ 3150/13827] 22.8% | OK: 1811 | Erros: 1339
+   [ 3200/13827] 23.1% | OK: 1811 | Erros: 1389
+   [ 3250/13827] 23.5% | OK: 1811 | Erros: 1439
+   [ 3300/13827] 23.9% | OK: 1811 | Erros: 1489
+   [ 3350/13827] 24.2% | OK: 1811 | Erros: 1539
+   [ 3400/13827] 24.6% | OK: 1811 | Erros: 1589
+   [ 3450/13827] 25.0% | OK: 1811 | Erros:    [ 2950/13827] 21.3% | OK: 1708 | Erros: 1242
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 3000/13827] 21.7% | OK: 1708 | Erros: 1292
+   [ERRO 3001/13827] SOLIDEZ TRANSPORTES LTDA -> ERROR: API bloqueada por consumo indevido. Tente novamente em 759 segundos.
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 3050/13827] 22.1% | OK: 1708 | Erros: 1342
+   [ 3100/13827] 22.4% | OK: 1708 | Erros: 1392
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 3150/13827] 22.8% | OK: 1708 | Erros: 1442
+   [ 3200/13827] 23.1% | OK: 1708 | Erros: 1492
+   [ 3250/13827] 23.5% | OK: 1708 | Erros: 1542
+   [ 3300/13827] 23.9% | OK: 1708 | Erros: 1592
+   [ 3350/13827] 24.2% | OK: 1708 | Erros: 1642
+   [ 3400/13827] 24.6% | OK: 1708 | Erros: 1692
+   [ 3450/13827] 25.0% | OK: 1708 | Erros: 1742
+   [ 3500/13827] 25.3% | OK: 1708 | Erros: 1792
+   [ERRO 3501/13827] O CONSTRUTOR FERRAMENTAS E FERRAGENS EIR -> ERROR: API bloqueada por consumo indevido. Tente novamente em 349 segundos.
+   [ 3550/13827] 25.7% | OK: 1708 | Erros: 1842
+   [ 3600/13827] 26.0% | OK: 1708 | Erros: 1892
+   [ 3650/13827] 26.4% | OK: 1708 | Erros: 1942
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 3700/13827] 26.8% | OK: 1708 | Erros: 1992
+   [ 3750/13827] 27.1% | OK: 1708 | Erros: 2042
+   [ 3800/13827] 27.5% | OK: 1708 | Erros: 2092
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 3850/13827] 27.8% | OK: 1708 | Erros: 2142
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 3900/13827] 28.2% | OK: 1720 | Erros: 2180
+   [ 3950/13827] 28.6% | OK: 1765 | Erros: 2185
+   [ 4000/13827] 28.9% | OK: 1804 | Erros: 2196
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 4050/13827] 29.3% | OK: 1850 | Erros: 2200
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 4100/13827] 29.7% | OK: 1895 | Erros: 2205
+   [ 4150/13827] 30.0% | OK: 1939 | Erros: 2211
+   [ 4200/13827] 30.4% | OK: 1984 | Erros: 2216
+   [ 4250/13827] 30.7% | OK: 2027 | Erros: 2223
+   [ 4300/13827] 31.1% | OK: 2072 | Erros: 2228
+   [ 4350/13827] 31.5% | OK: 2105 | Erros: 2245
+   [ 4400/13827] 31.8% | OK: 2119 | Erros: 2281
+   [ 4450/13827] 32.2% | OK: 2152 | Erros: 2298
+   [ 4500/13827] 32.5% | OK: 2195 | Erros: 2305
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 4550/13827] 32.9% | OK: 2228 | Erros: 2322
+   [ 4600/13827] 33.3% | OK: 2260 | Erros: 2340
+   [ 4650/13827] 33.6% | OK: 2306 | Erros: 2344
+   [ 4700/13827] 34.0% | OK: 2351 | Erros: 2349
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 4750/13827] 34.4% | OK: 2395 | Erros: 2355
+   [ 4800/13827] 34.7% | OK: 2437 | Erros: 2363
+.8% | OK: 1754 | Erros: 2646
+   [JA EXISTE 4401/13827] GARDA EMPREENDIMENTOS E PARTICIPACOES S/
+   [ 4450/13827] 32.2% | OK: 1787 | Erros: 2663
+   [ 4500/13827] 32.5% | OK: 1824 | Erros: 2676
+   [ 4550/13827] 32.9% | OK: 1858 | Erros: 2692
+   [ 4600/13827] 33.3% | OK: 1886 | Erros: 2714
+   [JA EXISTE 4601/13827] LEROY MERLIN COMPANHIA BRASILEIRA DE BRI
+   [ 4650/13827] 33.6% | OK: 1918 | Erros: 2732
+   [ 4700/13827] 34.0% | OK: 1959 | Erros: 2741
+   [ 4750/13827] 34.4% | OK: 1997 | Erros: 2753
+   [ 4800/13827] 34.7% | OK: 2030 | Erros: 2770
+   [ 4850/13827] 35.1% | OK: 2055 | Erros: 2795
+   [ 4900/13827] 35.4% | OK: 2092 | Erros: 2808
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 4950/13827] 35.8% | OK: 2130 | Erros: 2820
+   [ 5000/13827] 36.2% | OK: 2165 | Erros: 2835
+   [JA EXISTE 5001/13827] ANTEPARK ESTACIONAMENTOS LTDA
+   [ 5050/13827] 36.5% | OK: 2203 | Erros: 2847
+13827] 37.6% | OK: 1472 | Erros: 3728
+   [ 5250/13827] 38.0% | OK: 1472 | Erros: 3778
+   [ 5300/13827] 38.3% | OK: 1472 | Erros: 3828
+   [ 5350/13827] 38.7% | OK: 1472 | Erros: 3878
+   [ 5400/13827] 39.1% | OK: 1472 | Erros: 3928
+   [ 5450/13827] 39.4% | OK: 1472 | Erros: 3978
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 5500/13827] 39.8% | OK: 1472 | Erros: 4028
+   [ERRO 5501/13827] AMORIM VIDROS COMERCIO E SERVICOS LTDA -> ERROR: API bloqueada por consumo indevido. Tente novamente em 190 segundos.
+   [ 5550/13827] 40.1% | OK: 1472 | Erros: 4078
+   [ 5600/13827] 40.5% | OK: 1472 | Erros: 4128
+   [ 5650/13827] 40.9% | OK: 1472 | Erros: 4178
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 5700/13827] 41.2% | OK: 1472 | Erros: 4228
+   [ 5750/13827] 41.6% | OK: 1472 | Erros: 4278
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 5800/13827] 41.9% | OK: 1478 | Erros: 4322
+   [ 5850/13827] 42.3% | OK: 1517 | Erros: 4333
+   [ 5900/13827] 42.7% | OK: 1558 | Erros: 4342
+   [ 5950/13827] 43.0% | OK: 1604 | Erros: 4346
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 6000/13827] 43.4% | OK: 1652 | Erros: 4348
+   [ 6050/13827] 43.8% | OK: 1700 | Erros: 4350
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 6100/13827] 44.1% | OK: 1736 | Erros: 4364
+   [ 6150/13827] 44.5% | OK: 1773 | Erros: 4377
+   [ 6200/13827] 44.8% | OK: 1818 | Erros: 4382
+   [ 6250/13827] 45.2% | OK: 1853 | Erros: 4397
+   [ 6300/13827] 45.6% | OK: 1895 | Erros: 4405
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 6350/13827] 45.9% | OK: 1902 | Erros: 4448
+   [ 6400/13827] 46.3% | OK: 1921 | Erros: 4479
+   [ 6450/13827] 46.6% | OK: 1938 | Erros: 4512
+   [ 6500/13827] 47.0% | OK: 1964 | Erros: 4536
+   [ERRO 6501/13827] RESTAURANTE E CHURRASCARIA BATISTELLO DE -> ERROR: Consumo redundante detectado. Aguarde 60 segundos para tentar novamente (
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 6550/13827] 47.4% | OK: 1988 | Erros: 4562
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 6600/13827] 47.7% | OK: 2024 | Erros: 4576
+   [ 6650/13827] 48.1% | OK: 2045 | Erros: 4605
+   [ 6700/13827] 48.5% | OK: 2073 | Erros: 4627
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 6750/13827] 48.8% | OK: 2086 | Erros: 4664
+   [ 6800/13827] 49.2% | OK: 2115 | Erros: 4685
+   [RETRY 1] HTTPSConnectionPool(host='app.omie.com.br', port=443): Read timed out. (read timeout=30)
+   [ 6850/13827] 49.5% | OK: 2146 | Erros: 4704
+   [ 6900/13827] 49.9% | OK: 2179 | Erros: 4721
+   [ 6950/13827] 50.3% | OK: 2210 | Erros: 4740
