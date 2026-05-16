@@ -242,6 +242,65 @@ const TOOLS: Anthropic.Tool[] = [
       },
     },
   },
+  {
+    name: "buscar_ciclo_financeiro",
+    description:
+      "Calcula PMR (Prazo Médio de Recebimento), PMP (Prazo Médio de Pagamento), PME estimado e Ciclo Financeiro = PMR + PME - PMP. Use para 'meu ciclo financeiro está saudável?', 'demoro para receber?', 'pago antes de receber?', 'ciclo operacional'. Ciclo alto = empresa precisa de mais capital de giro.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "buscar_liquidez",
+    description:
+      "Calcula índices de liquidez estimados: Liquidez Corrente (CR/CP), Liquidez Imediata (caixa/CP). Use para 'tenho liquidez?', 'consigo pagar meus compromissos?', 'minha liquidez é suficiente?'. Liquidez < 1 = crítico.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "buscar_endividamento",
+    description:
+      "Analisa endividamento operacional e capacidade de alavancagem. Calcula Dívida Operacional (CP total), Dívida/EBITDA ratio, e capacidade de alavancagem. Use para 'posso pegar empréstimo?', 'endividamento perigoso?', 'capacidade de alavancagem', 'vale usar capital de terceiros?'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "buscar_ponto_equilibrio",
+    description:
+      "Calcula o ponto de equilíbrio estimado (faturamento mínimo para cobrir custos), margem de contribuição e margem de segurança. Use para 'quanto preciso faturar?', 'ponto de equilíbrio', 'break-even', 'estou acima do equilíbrio?', 'o que acontece se a receita cair?'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "buscar_roe_equity",
+    description:
+      "Analisa retorno sobre capital e geração de valor patrimonial (Equity Score). ROE e ROA são estimados — patrimônio líquido e ativos totais não estão disponíveis no sistema ainda. Retorna Equity Score qualitativo baseado em crescimento, margem, recorrência e concentração. Use para 'o negócio gera valor?', 'ROE', 'ROA', 'retorno sobre capital', 'vale manter capital neste negócio?'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "simular_crescimento",
+    description:
+      "Simula cenários what-if de crescimento: impacto no caixa, NCG, estoque e risco de liquidez para crescimento de 10%, 30% ou 50%. Use SEMPRE que o usuário perguntar sobre crescer, expandir, escalar, ou 'o que preciso para crescer X%'. Retorna análise por cenário com recomendação.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        crescimento_pct: {
+          type: "number",
+          description: "Percentual de crescimento a simular (ex: 30 para 30%). Se não informado, simula 10%, 30% e 50%.",
+        },
+      },
+    },
+  },
 ];
 
 // ── Tool executor ─────────────────────────────────────────────────────────────
@@ -658,6 +717,301 @@ async function executeTool(
         return JSON.stringify({
           total_clientes_analisados: enriched.length,
           clientes: enriched.sort((a: any, b: any) => b.receita_total - a.receita_total),
+        });
+      }
+
+      case "buscar_ciclo_financeiro": {
+        const [crData, cpData, ebitdaData] = await Promise.all([
+          sbQuery("CR_Omie", [
+            ["select", "valor_documento"],
+            ["status_titulo", "in.(A RECEBER,ATRASADO)"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("CP_Omie", [
+            ["select", "valor_documento"],
+            ["status_titulo", "eq.A VENCER"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("vw_ebitda_12m", {
+            select: "receita,margem",
+            order: "mes_dt.asc",
+          }),
+        ]);
+        const crTotal = (crData as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const cpTotal = (cpData as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const receita12m = (ebitdaData as any[]).reduce((s, r) => s + Number(r.receita ?? 0), 0);
+        const margem12m  = (ebitdaData as any[]).reduce((s, r) => s + Number(r.margem  ?? 0), 0);
+        const margemBrutaPct = receita12m > 0 ? (margem12m / receita12m * 100) : 35;
+        const cogsAnual = receita12m * (1 - margemBrutaPct / 100);
+
+        const pmr = receita12m > 0 ? Math.round(crTotal / (receita12m / 365)) : 0;
+        const pmp = cogsAnual  > 0 ? Math.round(cpTotal / (cogsAnual  / 365)) : 0;
+        const pme = 45;
+        const ciclo = pmr + pme - pmp;
+
+        const diagnostico = ciclo < 0
+          ? "FAVORAVEL: fornecedores financiam o ciclo — empresa recebe antes de pagar"
+          : ciclo < 30 ? "SAUDAVEL: ciclo curto, baixa necessidade de capital de giro"
+          : ciclo < 60 ? "ATENCAO: ciclo moderado — monitorar prazo de recebimento"
+          : "CRITICO: ciclo longo — empresa financia muitos dias com capital proprio";
+
+        return JSON.stringify({
+          pmr_dias: pmr,
+          pmp_dias: pmp,
+          pme_dias_estimado: pme,
+          ciclo_financeiro_dias: ciclo,
+          diagnostico,
+          interpretacao: {
+            pmr_alto: pmr > 45 ? "Clientes demoram para pagar — considere reduzir prazo de recebimento" : null,
+            pmp_baixo: pmp < 30 ? "Empresa paga fornecedores muito rápido — tente negociar prazos maiores" : null,
+            ciclo_impacto: `Para cada R$ 1M de aumento de receita, a empresa precisa de ~R$ ${Math.round(ciclo * 1000000 / 365).toLocaleString("pt-BR")} a mais de capital de giro`,
+          },
+          nota: "PME estimado em 45 dias (benchmark distribuidora de peças). PMR e PMP calculados com base em CR/CP total dividido pela taxa diária de receita/COGS.",
+        });
+      }
+
+      case "buscar_liquidez": {
+        const [crData, cpData, caixaData] = await Promise.all([
+          sbQuery("CR_Omie", [
+            ["select", "valor_documento"],
+            ["status_titulo", "in.(A RECEBER,ATRASADO)"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("CP_Omie", [
+            ["select", "valor_documento"],
+            ["status_titulo", "eq.A VENCER"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("vw_caixa_projetado", {
+            select: "saldo_d30,saldo_d90",
+            limit: "1",
+          }),
+        ]);
+        const crTotal = (crData as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const cpTotal = (cpData as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const caixa30 = (caixaData as any[])[0]?.saldo_d30 ?? 0;
+
+        const liquidezCorrente = cpTotal > 0 ? Math.round((crTotal / cpTotal) * 100) / 100 : 9.99;
+        const liquidezImediata = cpTotal > 0 ? Math.round((Math.max(0, Number(caixa30)) / cpTotal) * 100) / 100 : 0;
+
+        const status = liquidezCorrente < 1.0 ? "CRITICO" : liquidezCorrente < 1.3 ? "ATENCAO" : "SAUDAVEL";
+        const alertas: string[] = [];
+        if (liquidezCorrente < 1.0) alertas.push("CRITICO: passivo circulante supera ativo circulante — empresa depende de novas vendas para honrar compromissos");
+        if (liquidezCorrente < 1.3) alertas.push("ATENCAO: margem de liquidez estreita — qualquer atraso de recebimento pode pressionar pagamentos");
+        if (liquidezImediata < 0.1) alertas.push("CRITICO: caixa imediato insuficiente — menos de 10% do passivo coberto por caixa disponível");
+
+        return JSON.stringify({
+          ativo_circulante_estimado: Math.round(crTotal),
+          passivo_circulante_estimado: Math.round(cpTotal),
+          caixa_d30: Math.round(Number(caixa30)),
+          liquidez_corrente: liquidezCorrente,
+          liquidez_imediata: liquidezImediata,
+          status,
+          alertas,
+          benchmarks: {
+            corrente_saudavel: ">1.3x",
+            corrente_aceitavel: "1.0x a 1.3x",
+            corrente_critico: "<1.0x",
+            imediata_saudavel: ">0.3x",
+          },
+          nota: "Ativo circulante estimado = CR em aberto. Passivo circulante estimado = CP a vencer. Sem estoque valorizado, liquidez seca = liquidez corrente.",
+        });
+      }
+
+      case "buscar_endividamento": {
+        const [cpData, ebitdaData] = await Promise.all([
+          sbQuery("CP_Omie", [
+            ["select", "valor_documento"],
+            ["status_titulo", "eq.A VENCER"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("vw_ebitda_12m", {
+            select: "ebitda",
+            order: "mes_dt.asc",
+          }),
+        ]);
+        const cpTotal   = (cpData    as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const ebitda12m = (ebitdaData as any[]).reduce((s, r) => s + Number(r.ebitda ?? 0), 0);
+
+        const dividaEbitda = ebitda12m > 0 ? Math.round((cpTotal / ebitda12m) * 100) / 100 : 0;
+        const status = dividaEbitda > 3 ? "CRITICO" : dividaEbitda > 1.5 ? "ATENCAO" : "SAUDAVEL";
+
+        // Capacidade de alavancagem: até 3x EBITDA é benchmark de mercado
+        const capacidadeAlavancagem = Math.max(0, Math.round(ebitda12m * 3 - cpTotal));
+
+        return JSON.stringify({
+          divida_operacional: Math.round(cpTotal),
+          ebitda_12m: Math.round(ebitda12m),
+          divida_ebitda_ratio: dividaEbitda,
+          status,
+          capacidade_alavancagem_estimada: capacidadeAlavancagem,
+          benchmarks: {
+            saudavel: "até 1.5x EBITDA",
+            atencao: "1.5x a 3.0x EBITDA",
+            critico: "acima de 3.0x EBITDA",
+            mercado_referencia: "Empresas de distribuição saudáveis: 0.5x a 1.5x",
+          },
+          interpretacao: dividaEbitda <= 1.5
+            ? "Endividamento saudável. Há espaço para alavancagem estratégica — captar para estoque de alto giro, importação ou expansão pode fazer sentido se o retorno superar o custo da dívida."
+            : dividaEbitda <= 3
+            ? "Endividamento moderado. Antes de captar mais, priorize reduzir prazo de pagamento ou aumentar EBITDA."
+            : "Endividamento elevado. Foque em reduzir dívida antes de qualquer nova alavancagem.",
+          nota: "Dívida operacional = CP total a vencer. Sem dados de dívida bancária/financeira no sistema atual.",
+        });
+      }
+
+      case "buscar_ponto_equilibrio": {
+        const ebitdaData = await sbQuery("vw_ebitda_12m", {
+          select: "mes,receita,margem,ebitda",
+          order: "mes_dt.desc",
+          limit: "3",
+        });
+        const meses = ebitdaData as any[];
+        if (!meses.length) return JSON.stringify({ erro: "Sem dados de receita/EBITDA" });
+
+        // Usa média dos últimos 3 meses completos
+        const n = meses.length;
+        const avgReceita = meses.reduce((s, m) => s + Number(m.receita ?? 0), 0) / n;
+        const avgMargem  = meses.reduce((s, m) => s + Number(m.margem  ?? 0), 0) / n;
+        const avgEbitda  = meses.reduce((s, m) => s + Number(m.ebitda  ?? 0), 0) / n;
+
+        const margemBrutaPct = avgReceita > 0 ? (avgMargem / avgReceita * 100) : 35;
+        // Custos fixos estimados = receita - ebitda (todas as despesas antes do EBITDA)
+        const custosFixos = avgReceita - avgEbitda;
+        const pontoEquilibrio = margemBrutaPct > 0
+          ? Math.round(custosFixos / (margemBrutaPct / 100))
+          : 0;
+        const margemSeguranca = avgReceita > 0 && pontoEquilibrio > 0
+          ? Math.round(((avgReceita - pontoEquilibrio) / avgReceita) * 1000) / 10
+          : 0;
+        const status = margemSeguranca > 20 ? "SAUDAVEL" : margemSeguranca > 10 ? "ATENCAO" : "CRITICO";
+
+        return JSON.stringify({
+          receita_media_3m: Math.round(avgReceita),
+          ebitda_medio_3m:  Math.round(avgEbitda),
+          margem_contribuicao_pct: Math.round(margemBrutaPct * 10) / 10,
+          custos_fixos_estimados: Math.round(custosFixos),
+          ponto_equilibrio_mensal: pontoEquilibrio,
+          margem_seguranca_pct: margemSeguranca,
+          status,
+          interpretacao: margemSeguranca > 20
+            ? `Operação com folga: receita ${margemSeguranca}% acima do equilíbrio. A empresa aguenta queda de até ${margemSeguranca}% na receita antes de entrar no vermelho.`
+            : margemSeguranca > 10
+            ? `Margem de segurança estreita: apenas ${margemSeguranca}% acima do ponto de equilíbrio. Monitore custos fixos.`
+            : `Risco elevado: a empresa está muito próxima do equilíbrio. Qualquer queda de receita ou aumento de custo pode gerar prejuízo.`,
+          nota: "Cálculo estimado. Margem de contribuição proxy = margem bruta. Custos fixos estimados = receita - EBITDA (inclui todas despesas operacionais).",
+        });
+      }
+
+      case "buscar_roe_equity": {
+        // ROE e ROA não disponíveis sem balanço patrimonial completo
+        // Equity Score qualitativo baseado em dados disponíveis
+        const ebitdaData = await sbQuery("vw_ebitda_12m", {
+          select: "receita,ebitda,margem",
+          order: "mes_dt.asc",
+        });
+        const meses = ebitdaData as any[];
+        const receita12m = meses.reduce((s, m) => s + Number(m.receita ?? 0), 0);
+        const ebitda12m  = meses.reduce((s, m) => s + Number(m.ebitda  ?? 0), 0);
+        const margemMedia = receita12m > 0 ? Math.round((ebitda12m / receita12m) * 1000) / 10 : 0;
+
+        // Crescimento: H2 vs H1
+        const mid = Math.floor(meses.length / 2);
+        const h1 = meses.slice(0, mid).reduce((s, m) => s + Number(m.receita ?? 0), 0);
+        const h2 = meses.slice(mid).reduce((s, m) => s + Number(m.receita ?? 0), 0);
+        const crescimentoHH = h1 > 0 ? Math.round(((h2 - h1) / h1) * 1000) / 10 : 0;
+
+        // Equity Score: 0–100
+        const scoreGrowth = crescimentoHH > 30 ? 100 : crescimentoHH > 15 ? 80 : crescimentoHH > 0 ? 60 : 30;
+        const scoreMargin = margemMedia > 15 ? 100 : margemMedia > 8 ? 80 : margemMedia > 3 ? 60 : 30;
+        const equityScore = Math.round((scoreGrowth * 0.5 + scoreMargin * 0.5));
+
+        return JSON.stringify({
+          roe_disponivel: false,
+          roa_disponivel: false,
+          motivo_indisponibilidade: "Patrimônio líquido e ativos totais não estão mapeados no sistema. Necessário integrar balanço patrimonial para calcular ROE e ROA.",
+          equity_score: equityScore,
+          equity_status: equityScore >= 80 ? "FORTE" : equityScore >= 60 ? "MODERADO" : "FRACO",
+          dados_disponiveis: {
+            receita_12m: Math.round(receita12m),
+            ebitda_12m:  Math.round(ebitda12m),
+            margem_ebitda_media_pct: margemMedia,
+            crescimento_h2_vs_h1_pct: crescimentoHH,
+          },
+          interpretacao: `Equity Score ${equityScore}/100. Com crescimento de ${crescimentoHH}% e margem EBITDA de ${margemMedia}%, ${equityScore >= 70 ? "o negócio está gerando valor patrimonial — reinvestir faz sentido se o custo de capital for controlado." : "há oportunidade de melhora na geração de valor. Foque em crescimento com margem antes de buscar capital externo."}`,
+          proximos_passos: ["Mapear patrimônio líquido no Supabase para calcular ROE real", "Mapear ativos totais para calcular ROA real", "Implementar tabela de balanço patrimonial"],
+        });
+      }
+
+      case "simular_crescimento": {
+        const [crData, cpData, ebitdaData, caixaData] = await Promise.all([
+          sbQuery("CR_Omie", [
+            ["select", "valor_documento"],
+            ["status_titulo", "in.(A RECEBER,ATRASADO)"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("CP_Omie", [
+            ["select", "valor_documento"],
+            ["status_titulo", "eq.A VENCER"],
+            ["limit", "10000"],
+          ]),
+          sbQuery("vw_ebitda_12m", {
+            select: "receita,margem,ebitda",
+            order: "mes_dt.asc",
+          }),
+          sbQuery("vw_caixa_projetado", {
+            select: "saldo_d30,saldo_d90",
+            limit: "1",
+          }),
+        ]);
+        const crTotal   = (crData    as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const cpTotal   = (cpData    as any[]).reduce((s, r) => s + Number(r.valor_documento ?? 0), 0);
+        const receita12m = (ebitdaData as any[]).reduce((s, m) => s + Number(m.receita ?? 0), 0);
+        const ebitda12m  = (ebitdaData as any[]).reduce((s, m) => s + Number(m.ebitda  ?? 0), 0);
+        const margem12m  = (ebitdaData as any[]).reduce((s, m) => s + Number(m.margem  ?? 0), 0);
+        const margemBrutaPct = receita12m > 0 ? (margem12m / receita12m * 100) : 35;
+        const ebitdaPct = receita12m > 0 ? (ebitda12m / receita12m * 100) : 10;
+        const caixa30 = Number((caixaData as any[])[0]?.saldo_d30 ?? 0);
+
+        const cenarios = (input.crescimento_pct ? [Number(input.crescimento_pct)] : [10, 30, 50]).map((pct) => {
+          const fator = 1 + pct / 100;
+          const receitaProj = Math.round(receita12m * fator);
+          const ebitdaProj  = Math.round(ebitda12m  * fator * (1 - pct * 0.002)); // crescimento comprime margem ligeiramente
+          const crProj      = Math.round(crTotal * fator);
+          const cpProj      = Math.round(cpTotal * fator);
+          const ncgProj     = crProj - cpProj;
+          const ncgAtual    = crTotal - cpTotal;
+          const capitalAdicional = Math.max(0, ncgProj - ncgAtual);
+          const caixaRisco  = caixa30 - capitalAdicional;
+          const risco       = caixaRisco < 0 ? "CRITICO" : caixaRisco < caixa30 * 0.3 ? "ALTO" : caixaRisco < caixa30 * 0.6 ? "MODERADO" : "BAIXO";
+
+          return {
+            crescimento_pct: pct,
+            receita_projetada_12m: receitaProj,
+            ebitda_projetado_12m:  ebitdaProj,
+            ncg_projetada:         ncgProj,
+            capital_adicional_necessario: capitalAdicional,
+            caixa_residual_estimado: caixaRisco,
+            risco,
+            recomendacao: risco === "CRITICO"
+              ? `Crescimento de ${pct}% requer R$ ${capitalAdicional.toLocaleString("pt-BR")} de capital adicional que o caixa atual não cobre. Só avance com captação externa ou redução de ciclo financeiro.`
+              : risco === "ALTO"
+              ? `Crescimento de ${pct}% é viável mas exigirá R$ ${capitalAdicional.toLocaleString("pt-BR")} de capital adicional. Prepare a estrutura de caixa antes de acelerar.`
+              : `Crescimento de ${pct}% parece viável com a estrutura atual. Monitore NCG e prazo de recebimento durante a expansão.`,
+          };
+        });
+
+        return JSON.stringify({
+          base_atual: {
+            receita_12m: Math.round(receita12m),
+            ebitda_12m:  Math.round(ebitda12m),
+            margem_ebitda_pct: Math.round(ebitdaPct * 10) / 10,
+            margem_bruta_pct: Math.round(margemBrutaPct * 10) / 10,
+            ncg_atual: Math.round(crTotal - cpTotal),
+            caixa_d30: Math.round(caixa30),
+          },
+          cenarios,
+          nota: "Simulação baseada em crescimento proporcional de receita e ciclo financeiro. NCG projetada assume mesmos prazos PMR/PMP. Capital adicional = aumento de NCG. Margem comprimida 0.2pp por ponto percentual de crescimento (efeito de escala conservador).",
         });
       }
 

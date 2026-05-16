@@ -42,7 +42,9 @@ import { PeriodSelector, type DateRange } from "@/components/app/PeriodSelector"
 import { formatBRL } from "@/data/executive-mock";
 import { formatBRLCompact } from "@/lib/format";
 import { useStrategicDashboard } from "@/hooks/useStrategicDashboard";
+import { useStrategicFinance } from "@/hooks/useStrategicFinance";
 import { useNfeDashboard } from "@/hooks/useNfeDashboard";
+import { StrategicFinanceSection } from "@/components/app/StrategicFinanceSection";
 import { useSidebarToggle } from "../_app";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -111,6 +113,8 @@ function StrategicDashboard() {
     mixFamilias, mixCanal, pedidosSemana,
     isLoading, isError,
   } = useStrategicDashboard();
+
+  const financeData = useStrategicFinance(rawK, concentracao);
 
   const { custoMap } = useNfeDashboard();
   const lucroBrutoNfe = useMemo(() => {
@@ -837,6 +841,8 @@ function StrategicDashboard() {
             </div>
           </div>
         </div>
+        {/* Inteligência Financeira Estratégica */}
+        <StrategicFinanceSection data={financeData} />
       </main>
     </>
   );
